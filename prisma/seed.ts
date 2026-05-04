@@ -159,16 +159,68 @@ async function main(): Promise<void> {
     },
   });
 
-  // Local credentials login. The hash is Argon2id (the same algorithm the
-  // Credentials provider verifies with); the password is intentionally a
-  // well-known development credential printed by the login page.
+  // Local credentials login. The hashes are Argon2id (the same algorithm the
+  // Credentials provider verifies with); the passwords are intentionally
+  // well-known development credentials.
+  const demoUserId = deterministicUuid7(95_000, `user:${seed}:demo`);
   await prisma.user.create({
     data: {
-      id: deterministicUuid7(95_000, `user:${seed}:demo`),
+      id: demoUserId,
       email: "demo@alder.test",
       passwordHash: await hash("demo-password-123"),
       name: "Demo Customer",
       role: "CUSTOMER",
+    },
+  });
+
+  await prisma.user.create({
+    data: {
+      id: deterministicUuid7(95_001, `user:${seed}:admin`),
+      email: "admin@alder.test",
+      passwordHash: await hash("admin-password-123"),
+      name: "Demo Admin",
+      role: "ADMIN",
+    },
+  });
+
+  // One REFUND_REQUIRED order so /admin/orders has a real, seeded example of
+  // the state the failure path exists for. Snapshots (sku, name, unit price)
+  // are written exactly as checkout writes them; the order never changes when
+  // the product is edited or archived.
+  const refundVariant = await prisma.variant.findFirst({
+    where: { product: { slug: "alder-ceramic-mug" } },
+    orderBy: { priceCents: "asc" },
+    select: { id: true, sku: true, name: true, priceCents: true },
+  });
+  if (refundVariant === null) {
+    throw new Error("seed product alder-ceramic-mug has no variants");
+  }
+  const refundQuantity = 2;
+  const refundSubtotal = refundVariant.priceCents * refundQuantity;
+
+  await prisma.order.create({
+    data: {
+      id: deterministicUuid7(96_000, `order:${seed}:refund-required`),
+      userId: demoUserId,
+      status: "REFUND_REQUIRED",
+      idempotencyKey: `seed-refund-required-${seed}`,
+      subtotalCents: refundSubtotal,
+      discountCents: 0,
+      totalCents: refundSubtotal,
+      currency: "usd",
+      stripePaymentIntentId: `pi_seed_refund_required_${seed}`,
+      createdAt: new Date(PRODUCT_EPOCH + PRODUCTS.length * 60_000),
+      items: {
+        create: [
+          {
+            variantId: refundVariant.id,
+            sku: refundVariant.sku,
+            nameSnapshot: refundVariant.name,
+            unitPriceCents: refundVariant.priceCents,
+            quantity: refundQuantity,
+          },
+        ],
+      },
     },
   });
 
@@ -201,8 +253,23 @@ async function main(): Promise<void> {
     .update(skus.map((row) => row.sku).join("\n"))
     .digest("hex");
 
+  const adminCount = await prisma.user.count({ where: { role: "ADMIN" } });
+  if (adminCount !== 1) {
+    throw new Error(`expected 1 admin user, got ${adminCount}`);
+  }
+
+  // The admin console's REFUND_REQUIRED example is part of the seed contract,
+  // not just a fixture: it must exist with its snapshotted line items.
+  const refundExample = await prisma.order.findFirst({
+    where: { status: "REFUND_REQUIRED" },
+    select: { id: true, totalCents: true, items: { select: { id: true } } },
+  });
+  if (refundExample === null || refundExample.items.length === 0) {
+    throw new Error("seed did not create a REFUND_REQUIRED order with items");
+  }
+
   console.log(
-    `seed=${seed} categories=${CATEGORIES.length} products=${productCount} variants=${variantTotal} coupons=1 users=1 skus_sha256=${skuDigest}`,
+    `seed=${seed} categories=${CATEGORIES.length} products=${productCount} variants=${variantTotal} coupons=1 customers=1 admins=1 orders=1 refund_required=${refundExample.totalCents} skus_sha256=${skuDigest}`,
   );
 }
 
