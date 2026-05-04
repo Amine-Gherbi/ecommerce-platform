@@ -158,5 +158,13 @@ describe("20 concurrent checkouts against stock 5", () => {
     for (const response of rejected) {
       expect(response.body.orderId).toBeUndefined();
     }
+
+    // Captured verbatim into docs/proof/concurrency-run.txt; the terminal panel
+    // in the hero image renders that file, not a retyped claim.
+    console.info(
+      `[proof] ${SHOPPERS} concurrent checkouts on stock ${STOCK} → ` +
+        `${accepted.length}×201, ${rejected.length}×409, ` +
+        `stock=${String(variant?.stock)}, openReservations=${reservations.length}`,
+    );
   });
 });

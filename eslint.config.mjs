@@ -30,4 +30,22 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Node scripts and the k6 scenario run outside the app's environment.
+    files: ["scripts/**/*.mjs", "load/**/*.js"],
+    languageOptions: {
+      globals: {
+        process: "readonly",
+        console: "readonly",
+        URL: "readonly",
+        URLSearchParams: "readonly",
+        __ENV: "readonly",
+        __VU: "readonly",
+        __ITER: "readonly",
+        fetch: "readonly",
+        setTimeout: "readonly",
+        open: "readonly",
+      },
+    },
+  },
 );
