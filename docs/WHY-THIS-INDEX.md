@@ -1,148 +1,79 @@
 # Why these indexes
 
-Two indexes carry the storefront's hot paths: the category listing and full-text
-search. Both plans below are verbatim `EXPLAIN (ANALYZE, BUFFERS, COSTS)` output
-from this machine (PostgreSQL 16.13, Node 22, local cluster on port 5433).
+The indexes below are the ones the rebuilt schema declares, copied from
+`prisma/migrations/`. The plans are from this machine and this database, not
+from a synthetic catalogue: 31 products in `shop_dev` on 2026-10-23,
+PostgreSQL 16.13.
 
-The seeded catalog is intentionally small (40 products), so the planner correctly
-chooses sequential scans on it. To show what the indexes do once the catalog is
-real, the plans below were captured against a temporary 50,000-row product set:
-the rows were inserted inside a transaction, `ANALYZE` was run, the query was
-explained, and the transaction was rolled back. The seeded database is unchanged
-(40 products) after these runs.
+## The product listing
 
-```sql
-BEGIN;
-INSERT INTO "Product" (id, slug, name, description, "categoryId", "archivedAt", "createdAt", "updatedAt")
-SELECT
-  gen_random_uuid(),
-  'bulk-' || g,
-  (ARRAY['Canvas','Wool','Leather','Ceramic','Linen'])[1 + g % 5] || ' '
-    || (ARRAY['Jacket','Sweater','Bag','Mug','Notebook'])[1 + (g / 5)::int % 5] || ' ' || g,
-  'Bulk generated product ' || g || ' with canvas, wool and leather words for search.',
-  c.id,
-  CASE WHEN g % 100 = 0 THEN now() ELSE NULL END,
-  now() - (g || ' seconds')::interval,
-  now()
-FROM generate_series(1, 50000) AS g
-CROSS JOIN LATERAL (
-  SELECT id FROM "Category" ORDER BY slug OFFSET (g % 5) LIMIT 1
-) AS c;
-ANALYZE "Product";
--- … EXPLAIN statements below …
-ROLLBACK;
-```
-
-## 1. Product list by category — `Product_categoryId_createdAt_idx`
-
-The listing is `WHERE "categoryId" = $1 AND "archivedAt" IS NULL ORDER BY
-"createdAt" DESC`, paginated. The index is `(categoryId, createdAt)`; `archivedAt`
-deliberately is **not** in it. Equality on `categoryId` fixes the first key, so the
-second key supplies the sort order, and `archivedAt IS NULL` is a cheap recheck on
-the heap rows actually read. Putting `archivedAt` between the equality and the sort
-key would break that ordering guarantee, because `IS NULL` is not an equality for
-pathkey purposes.
+`getCategoryPageData` filters `Product` by `categoryId` and
+`status = 'ACTIVE'`, loads variants and images, then sorts and paginates **in
+memory** (`src/lib/catalog.ts:285-315`). It does not issue `ORDER BY … LIMIT`
+for the page.
 
 ```sql
 EXPLAIN (ANALYZE, BUFFERS, COSTS)
-SELECT id, slug, name, "createdAt"
+SELECT id, slug, title, "createdAt"
 FROM "Product"
-WHERE "categoryId" = (SELECT id FROM "Category" WHERE slug = 'apparel')
-  AND "archivedAt" IS NULL
-ORDER BY "createdAt" DESC
-LIMIT 24;
+WHERE "categoryId" = (SELECT id FROM "Category" WHERE slug = 'headphones')
+  AND status = 'ACTIVE';
 ```
 
 ```text
- Limit  (cost=8.58..32.66 rows=24 width=52) (actual time=0.043..0.083 rows=24 loops=1)
-   Buffers: shared hit=47
+ Seq Scan on "Product"  (cost=8.17..10.62 rows=8 width=60) (actual time=0.064..0.084 rows=10 loops=1)
+   Filter: (("categoryId" = $0) AND (status = 'ACTIVE'::"ProductStatus"))
+   Rows Removed by Filter: 21
+   Buffers: shared hit=4
    InitPlan 1 (returns $0)
-     ->  Index Scan using "Category_slug_key" on "Category"  (cost=0.15..8.17 rows=1 width=16) (actual time=0.011..0.012 rows=1 loops=1)
-           Index Cond: (slug = 'apparel'::text)
+     ->  Index Scan using "Category_slug_key" on "Category"  (cost=0.15..8.17 rows=1 width=16) (actual time=0.029..0.030 rows=1 loops=1)
+           Index Cond: (slug = 'headphones'::text)
            Buffers: shared hit=2
-   ->  Index Scan Backward using "Product_categoryId_createdAt_idx" on "Product"  (cost=0.41..9942.87 rows=9910 width=52) (actual time=0.041..0.077 rows=24 loops=1)
-         Index Cond: ("categoryId" = $0)
-         Filter: ("archivedAt" IS NULL)
-         Buffers: shared hit=47
- Planning:
-   Buffers: shared hit=58
- Planning Time: 6.718 ms
- Execution Time: 0.132 ms
-(14 rows)
+ Planning Time: 11.353 ms
+ Execution Time: 0.206 ms
 ```
 
-The backward index scan stops after 24 rows: 47 buffers and 0.132 ms for the first
-page, with no sort node. For reference, the same predicate **without** `LIMIT` over
-the same 50,040 rows plans as a bitmap index scan plus a quicksort
-(`Execution Time: 12.799 ms`) — the index still narrows the category, but the
-planner gives up on ordered retrieval when it expects to return all ~10,000 rows.
-That is the right trade; the storefront only ever asks for a page.
+The planner chooses a sequential scan because 31 rows fit in a handful of
+pages; the composite index is not worth it at this size. The index exists for
+the shape the query will have once the catalogue grows:
 
-## 2. Full-text search — `Product_search_tsv_idx`
+`Product_categoryId_status_createdAt_idx` on
+`("categoryId", "status", "createdAt")`
+(`prisma/migrations/20261023152658_rebuild/migration.sql:192`). Equality on
+`categoryId` fixes the first key, `status` is a second equality, and
+`createdAt` is there for the `newest` sort — but note the code currently sorts
+in JavaScript, so only the filter benefits today. Pushing `ORDER BY` and
+`LIMIT` into SQL is the change that would make the third column earn its place;
+it has not been done.
 
-Prisma cannot declare an expression index, so it is hand-written in the initial
-migration:
+## Search
 
-```sql
-CREATE INDEX "Product_search_tsv_idx"
-  ON "Product"
-  USING GIN (to_tsvector('english', "name" || ' ' || "description"));
-```
+Search is `contains` with `mode: "insensitive"` over title, description and
+brand name (`src/lib/catalog.ts:344-354`). Prisma renders that as
+`ILIKE '%query%'`, which no B-tree index can serve: a leading wildcard leaves
+nothing to seek on. The rebuilt schema therefore has **no** full-text or GIN
+index. At 31 products this is a sequential scan of a few pages; at a real
+catalogue size it would be a table scan per search. Adding a `tsvector` column
+with a GIN index is the obvious next step, and it is not implemented.
 
-The query must repeat the expression **exactly** — same regconfig, same
-concatenation order — or the planner cannot match the index.
+## Indexes that carry correctness, not speed
 
-```sql
-EXPLAIN (ANALYZE, BUFFERS, COSTS)
-SELECT id, slug, name
-FROM "Product"
-WHERE to_tsvector('english', "name" || ' ' || "description") @@ websearch_to_tsquery('english', 'canvas jacket')
-  AND "archivedAt" IS NULL
-ORDER BY "createdAt" DESC
-LIMIT 20;
-```
+| Index | Why it exists |
+| --- | --- |
+| `Order_userId_idempotencyKey_key` (unique, `Order`) | The arbiter for one order per checkout attempt. The second concurrent insert blocks on it and raises `P2002`; the handler returns the winner (`src/lib/checkout.ts:304-323`). It is not a check-then-insert. |
+| `Order_paymentIntentId_key` (unique) | The webhook carries the PaymentIntent id, not our order id; this is the lookup (`src/lib/payments-webhook.ts:142-150`) and the guard against two orders owning one intent. Added in `20261023191000_checkout_payment`. |
+| `StockReservation_expiresAt_idx` | The sweeper's candidate scan, `releasedAt IS NULL AND expiresAt < now()` (`src/lib/reservations.ts:55-63`). |
+| `StockReservation_orderId_variantId_key` (unique) | One reservation per line per order; a second insert for the same line cannot exist, so release counts cannot double. |
+| `Product_categoryId_status_createdAt_idx` | The listing filter above. |
+| `Variant_sku_key` (unique) | `OrderItem.sku` is a snapshot, but the live SKU must still be unique. |
+| `Order_status_createdAt_idx` | The `(status, createdAt)` pair for status-filtered order lists. |
+| `Variant_stock_nonnegative` (`CHECK (stock >= 0)`) | Not an index, but the backstop behind the conditional `UPDATE` (`migration.sql:283`). |
 
-```text
- Limit  (cost=5194.84..5197.14 rows=20 width=52) (actual time=83.816..92.390 rows=20 loops=1)
-   Buffers: shared hit=1464
-   ->  Gather Merge  (cost=5194.84..5873.11 rows=5898 width=52) (actual time=83.814..92.384 rows=20 loops=1)
-         Workers Planned: 1
-         Workers Launched: 1
-         Buffers: shared hit=1464
-         ->  Sort  (cost=4194.83..4209.57 rows=5898 width=52) (actual time=8.852..8.855 rows=10 loops=2)
-               Sort Key: "createdAt" DESC
-               Sort Method: top-N heapsort  Memory: 27kB
-               Buffers: shared hit=1464
-               Worker 0:  Sort Method: quicksort  Memory: 25kB
-               ->  Parallel Bitmap Heap Scan on "Product"  (cost=1285.58..4037.88 rows=5898 width=52) (actual time=5.069..7.382 rows=4750 loops=2)
-                     Recheck Cond: (to_tsvector('english'::regconfig, ((name || ' '::text) || description)) @@ '''canva'' & ''jacket'''::tsquery)
-                     Filter: ("archivedAt" IS NULL)
-                     Rows Removed by Filter: 250
-                     Heap Blocks: exact=1158
-                     Buffers: shared hit=1457
-                     ->  Bitmap Index Scan on "Product_search_tsv_idx"  (cost=0.00..1283.07 rows=10132 width=0) (actual time=9.853..9.853 rows=10001 loops=1)
-                           Index Cond: (to_tsvector('english'::regconfig, ((name || ' '::text) || description)) @@ '''canva'' & ''jacket'''::tsquery)
-                           Buffers: shared hit=299
- Planning:
-   Buffers: shared hit=11
- Planning Time: 0.317 ms
- Execution Time: 92.479 ms
-(24 rows)
-```
+## What is not claimed
 
-The GIN index is what keeps this from being a full sequential scan of every
-description; the residual cost is the top-N sort by `createdAt`, which is inherent
-to ranking matches by recency rather than by text score.
-
-## The other indexes, briefly
-
-- `Order_userId_idempotencyKey_key` (unique) — the arbiter for
-  "one order per `(userId, idempotencyKey)`". A duplicate checkout hits the unique
-  violation and returns the existing order; it is not a check-then-insert race.
-- `Order_stripePaymentIntentId_key` (unique) — the webhook carries the PaymentIntent,
-  not our order id; this is the lookup and the duplicate guard.
-- `Order_status_createdAt_idx` — reconciliation scans pending orders by age.
-- `StockReservation_expiresAt_idx` — the sweeper's
-  `releasedAt IS NULL AND expiresAt < now()` candidate scan.
-- `Variant_sku_key` (unique) and `OrderItem`'s snapshot columns — order history
-  never depends on a live product row.
+- No plan is shown for a catalogue larger than the seed. There is no
+  measurement here of how these indexes behave at 50,000 products, and a plan
+  invented for that size would not be evidence.
+- The sort columns matter only once sorting moves into SQL. Today the page
+  sorts `ProductRecord[]` in memory after fetching every matching row, which is
+  fine at 31 rows and is the actual scalability limit of the listing.

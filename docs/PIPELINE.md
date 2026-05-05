@@ -40,13 +40,21 @@ eslint . && tsc --noEmit && vitest run --coverage
 - **eslint** — flat config, TypeScript strict.
 - **tsc --noEmit** — no `any` escapes; `noUncheckedIndexedAccess` is on.
 - **vitest run --coverage** — unit + Postgres integration suites against
-  `shop_test`; the 70 % line/function/statement floor applies to `src/lib/**`.
+  `shop_test`; the 70 % line/function/statement floor applies to `src/lib/**`
+  and to `src/app/**/actions.ts` (`vitest.config.ts:25-38`). The 2026-10-23 run:
+  33 files, 181 tests, 92.54 % statements (`docs/proof/verify.txt`).
 - **prisma migrate diff --exit-code** — 0 clean, 2 drift, 1 error. Drift is a
-  failure, not a warning.
-- **playwright test** — two browser specs: a signed-in customer places an order
-  at the server-computed total, and a forged `totalCents` in the request body
-  is ignored. The E2E server runs on port 3100 against `shop_test`, reseeded
-  deterministically by `tests/e2e/global-setup.ts`.
+  failure, not a warning. It compares the database named by `DATABASE_URL` with
+  `prisma/schema.prisma`, so that database must already be migrated. The
+  workflow creates `shop_dev` but does not run `prisma migrate deploy`; since
+  the workflow has never executed, whether that step passes there is untested.
+- **playwright test** — four browser specs, five tests:
+  `admin.spec.ts` (an admin fulfils a paid order; a customer is redirected out
+  of `/admin`), `auth.spec.ts` (a wrong password stays on the form),
+  `checkout.spec.ts` (browse → cart → sign in → order at the server total) and
+  `signup.spec.ts` (create an account and land on `/account`). The E2E server
+  runs on port 3100 against `shop_test`, reseeded deterministically by
+  `tests/e2e/global-setup.ts`.
 
 ## Deliberate details
 
@@ -81,11 +89,11 @@ PostgreSQL cluster. `DATABASE_URL` is read from `.env` for the drift check.
 - **k6.** The load report in [`docs/load/checkout.md`](load/checkout.md) is a
   measurement of this machine, not a CI gate. A shared runner's CPU is not the
   reviewer's CPU, and a threshold on either would be a number about the runner.
-- **Asset capture.** `scripts/capture-assets.mjs` writes to
-  `P:\portfolio\_shared\assets\ecommerce-platform`, outside this repository.
-  A workflow cannot write the hub's snapshot, and should not try.
-- **Stripe.** `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` are not in CI.
-  The webhook suites use signed fixtures; the live test-mode assertion is
-  skipped when no key is present, and the local payment intent is refused under
-  `NODE_ENV=production`. The workflow therefore never silently exercises live
-  Stripe.
+- **Asset capture.** `npm run assets` runs
+  `scripts/capture-screenshots.mjs`, which needs a server on port 3000 and
+  writes to `../_shared/assets/ecommerce-platform`, outside this repository. A
+  workflow cannot write the hub's snapshot, and should not try.
+- **Stripe.** There is no Stripe integration to exercise: payments are
+  simulated, checkout writes a `pi_demo_*` id, and the webhook suites sign
+  their own fixtures. The workflow sets only `AUTH_SECRET` and the two database
+  URLs (`.github/workflows/ci.yml:45-49`).
