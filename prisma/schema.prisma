@@ -49,6 +49,7 @@ model User {
   addresses Address[]
   carts     Cart[]
   orders    Order[]
+  auditLogs AuditLog[]
 }
 
 model Address {
@@ -224,4 +225,22 @@ model WebhookEvent {
   processedAt DateTime?
 
   @@index([provider, type, receivedAt])
+}
+
+// One row per admin mutation. Written in the same transaction as the change it
+// records, so an audit row cannot survive a failed mutation or go missing after
+// a successful one.
+model AuditLog {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  actorId   String   @db.Uuid
+  action    String
+  entity    String
+  entityId  String
+  detail    Json
+  createdAt DateTime @default(now())
+
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+
+  @@index([entity, entityId, createdAt])
+  @@index([actorId, createdAt])
 }

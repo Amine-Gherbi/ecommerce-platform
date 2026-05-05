@@ -22,7 +22,9 @@ interface SignInPageProps {
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const query = await searchParams;
-  const next = safeNextPath(query.next);
+  // An explicit `next` wins; without one the sign-in action sends admins to
+  // the console and customers to their account.
+  const next = query.next === undefined ? "" : safeNextPath(query.next);
 
   return (
     <Container className="py-10 lg:py-16">
