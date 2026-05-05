@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { cookies } from "next/headers";
 
+import { auth } from "@/auth";
+import { mergeCartQuantity } from "@/lib/cart-merge";
 import { db } from "@/lib/db";
 import {
   FREE_SHIPPING_THRESHOLD_CENTS,
@@ -66,10 +68,28 @@ export interface CartPageData {
   freeShippingThreshold: string;
 }
 
+async function currentUserId(): Promise<string | null> {
+  const session = await auth();
+  const userId = session?.user?.id;
+  return typeof userId === "string" && userId.length > 0 ? userId : null;
+}
+
 async function readCartCookie(): Promise<string | null> {
   const store = await cookies();
   const value = store.get(CART_COOKIE)?.value;
   return value !== undefined && value.length > 0 ? value : null;
+}
+
+async function anonymousCart(): Promise<CartRecord | null> {
+  const anonymousId = await readCartCookie();
+  if (anonymousId === null) {
+    return null;
+  }
+
+  return db.cart.findUnique({
+    where: { anonymousId },
+    include: cartInclude,
+  });
 }
 
 function emptyCart(): CartPageData {
@@ -107,20 +127,7 @@ function toCartLine(
   };
 }
 
-export async function getCartData(): Promise<CartPageData> {
-  const anonymousId = await readCartCookie();
-  if (anonymousId === null) {
-    return emptyCart();
-  }
-
-  const cart = await db.cart.findUnique({
-    where: { anonymousId },
-    include: cartInclude,
-  });
-  if (cart === null) {
-    return emptyCart();
-  }
-
+function summarise(cart: CartRecord): CartPageData {
   const items = cart.items.map(toCartLine);
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotalCents = cart.items.reduce(
@@ -144,16 +151,35 @@ export async function getCartData(): Promise<CartPageData> {
   };
 }
 
-export async function getCartCount(): Promise<number> {
-  const anonymousId = await readCartCookie();
-  if (anonymousId === null) {
-    return 0;
-  }
+export async function getCartData(): Promise<CartPageData> {
+  const userId = await currentUserId();
+  const cart =
+    userId !== null
+      ? await db.cart.findUnique({ where: { userId }, include: cartInclude })
+      : await anonymousCart();
 
-  const cart = await db.cart.findUnique({
-    where: { anonymousId },
-    select: { id: true },
-  });
+  return cart === null ? emptyCart() : summarise(cart);
+}
+
+export async function getCartCount(): Promise<number> {
+  const userId = await currentUserId();
+  const cart =
+    userId !== null
+      ? await db.cart.findUnique({
+          where: { userId },
+          select: { id: true },
+        })
+      : await (async () => {
+          const anonymousId = await readCartCookie();
+          if (anonymousId === null) {
+            return null;
+          }
+          return db.cart.findUnique({
+            where: { anonymousId },
+            select: { id: true },
+          });
+        })();
+
   if (cart === null) {
     return 0;
   }
@@ -166,7 +192,16 @@ export async function getCartCount(): Promise<number> {
   return aggregate._sum.quantity ?? 0;
 }
 
-export async function getCartIdForCookie(): Promise<string | null> {
+export async function getCurrentCartId(): Promise<string | null> {
+  const userId = await currentUserId();
+  if (userId !== null) {
+    const cart = await db.cart.findUnique({
+      where: { userId },
+      select: { id: true },
+    });
+    return cart?.id ?? null;
+  }
+
   const anonymousId = await readCartCookie();
   if (anonymousId === null) {
     return null;
@@ -182,8 +217,20 @@ export async function getCartIdForCookie(): Promise<string | null> {
 
 export async function getOrCreateCart(): Promise<{
   cartId: string;
-  anonymousId: string;
+  anonymousId: string | null;
 }> {
+  const userId = await currentUserId();
+  if (userId !== null) {
+    const cart = await db.cart.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+      select: { id: true },
+    });
+
+    return { cartId: cart.id, anonymousId: null };
+  }
+
   const store = await cookies();
   const current = store.get(CART_COOKIE)?.value;
   const anonymousId =
@@ -205,4 +252,75 @@ export async function getOrCreateCart(): Promise<{
   });
 
   return { cartId: cart.id, anonymousId };
+}
+
+// Runs once after a successful sign-in (or sign-up). The anonymous cart row is
+// deleted inside the same transaction as the copy, so replaying this call finds
+// nothing to merge. Quantities follow `mergeCartQuantity`: higher wins.
+export async function mergeAnonymousCartIntoUserCart(
+  userId: string,
+): Promise<void> {
+  const store = await cookies();
+  const anonymousId = store.get(CART_COOKIE)?.value;
+  if (anonymousId === undefined || anonymousId.length === 0) {
+    return;
+  }
+
+  await db.$transaction(async (tx) => {
+    const source = await tx.cart.findUnique({
+      where: { anonymousId },
+      select: {
+        id: true,
+        userId: true,
+        items: { select: { variantId: true, quantity: true } },
+      },
+    });
+
+    if (source === null || source.userId !== null) {
+      return;
+    }
+
+    const target = await tx.cart.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+      select: { id: true },
+    });
+
+    for (const item of source.items) {
+      const existing = await tx.cartItem.findUnique({
+        where: {
+          cartId_variantId: {
+            cartId: target.id,
+            variantId: item.variantId,
+          },
+        },
+        select: { quantity: true },
+      });
+
+      const quantity = mergeCartQuantity(
+        existing?.quantity ?? null,
+        item.quantity,
+      );
+
+      await tx.cartItem.upsert({
+        where: {
+          cartId_variantId: {
+            cartId: target.id,
+            variantId: item.variantId,
+          },
+        },
+        create: {
+          cartId: target.id,
+          variantId: item.variantId,
+          quantity,
+        },
+        update: { quantity },
+      });
+    }
+
+    await tx.cart.deleteMany({ where: { id: source.id, userId: null } });
+  });
+
+  store.delete(CART_COOKIE);
 }

@@ -17,8 +17,8 @@ export const authConfig = {
   // for self-hosted deployments.
   trustHost: true,
   pages: {
-    signIn: "/login",
-    error: "/login",
+    signIn: "/signin",
+    error: "/signin",
   },
   session: {
     strategy: "jwt",
