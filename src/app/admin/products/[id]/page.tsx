@@ -86,7 +86,7 @@ export default async function AdminProductPage({
     <div>
       <Link
         href="/admin/products"
-        className={cn("text-[13px] text-ink/55", textLinkClass)}
+        className={cn("text-[13px] text-muted", textLinkClass)}
       >
         Back to products
       </Link>
@@ -95,12 +95,12 @@ export default async function AdminProductPage({
         <div>
           <p className={eyebrowClass}>{product.brand.name}</p>
           <h1 className={cn(pageTitleClass, "mt-2")}>{product.title}</h1>
-          <p className="mt-3 text-[13px] leading-5 text-ink/55">
+          <p className="mt-3 text-[13px] leading-5 text-muted">
             {product.category.name} · {product.variants.length}{" "}
             {product.variants.length === 1 ? "variant" : "variants"}
           </p>
         </div>
-        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/60">
+        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
           {product.status}
         </span>
       </div>
@@ -108,13 +108,13 @@ export default async function AdminProductPage({
       {error !== null ? (
         <p
           role="alert"
-          className="mt-6 border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+          className="mt-6 border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
         >
           {error}
         </p>
       ) : null}
       {saved !== null ? (
-        <p className="mt-6 border-l-2 border-rule pl-3 text-[13px] leading-5 text-ink/60">
+        <p className="mt-6 border-l-2 border-rule pl-3 text-[13px] leading-5 text-muted">
           Saved.
         </p>
       ) : null}
@@ -152,7 +152,7 @@ export default async function AdminProductPage({
               defaultValue={product.description}
               rows={6}
               maxLength={5_000}
-              className={cn(fieldClass, "h-auto min-h-[160px] py-3")}
+              className={cn(fieldClass, "h-auto min-h-[160px] py-2")}
             />
           </div>
 
@@ -166,7 +166,7 @@ export default async function AdminProductPage({
 
       <section className="mt-12 border-t border-rule pt-8">
         <h2 className={sectionTitleClass}>Specifications</h2>
-        <p className="mt-2 text-[13px] leading-5 text-ink/55">
+        <p className="mt-2 text-[13px] leading-5 text-muted">
           Clear a row to remove it. Blank rows are ignored.
         </p>
 
@@ -177,11 +177,11 @@ export default async function AdminProductPage({
             <table className="w-full min-w-[560px] border-collapse text-left">
               <caption className="sr-only">Specification rows</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Name
                   </th>
-                  <th scope="col" className="py-3 font-medium">
+                  <th scope="col" className="py-2 font-medium">
                     Value
                   </th>
                 </tr>
@@ -189,7 +189,7 @@ export default async function AdminProductPage({
               <tbody>
                 {specRowsForForm.map((row, index) => (
                   <tr key={`spec-${index}`} className="border-b border-rule">
-                    <td className="py-3 pr-4">
+                    <td className="py-2 pr-4">
                       <input
                         type="text"
                         name="specKey"
@@ -199,7 +199,7 @@ export default async function AdminProductPage({
                         className={fieldClass}
                       />
                     </td>
-                    <td className="py-3">
+                    <td className="py-2">
                       <input
                         type="text"
                         name="specValue"
@@ -225,7 +225,7 @@ export default async function AdminProductPage({
 
       <section className="mt-12 border-t border-rule pt-8">
         <h2 className={sectionTitleClass}>Variants</h2>
-        <p className="mt-2 text-[13px] leading-5 text-ink/55">
+        <p className="mt-2 text-[13px] leading-5 text-muted">
           Prices are integer cents. Changing a price does not change an existing
           order.
         </p>
@@ -237,17 +237,17 @@ export default async function AdminProductPage({
             <table className="w-full min-w-[640px] border-collapse text-left">
               <caption className="sr-only">Variant prices and stock</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Variant
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     SKU
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Price (cents)
                   </th>
-                  <th scope="col" className="py-3 font-medium">
+                  <th scope="col" className="py-2 font-medium">
                     Stock
                   </th>
                 </tr>
@@ -255,7 +255,7 @@ export default async function AdminProductPage({
               <tbody>
                 {product.variants.map((variant) => (
                   <tr key={variant.id} className="border-b border-rule">
-                    <td className="py-3 pr-4 text-[13px] text-ink/70">
+                    <td className="py-2 pr-4 text-[13px] text-muted">
                       {variant.title}
                       <input
                         type="hidden"
@@ -263,10 +263,10 @@ export default async function AdminProductPage({
                         value={variant.id}
                       />
                     </td>
-                    <td className="py-3 pr-4 text-[12px] tabular-nums text-ink/45">
+                    <td className="py-2 pr-4 text-[13px] tabular-nums text-muted">
                       {variant.sku}
                     </td>
-                    <td className="py-3 pr-4">
+                    <td className="py-2 pr-4">
                       <input
                         type="number"
                         name="priceCents"
@@ -277,7 +277,7 @@ export default async function AdminProductPage({
                         className={cn(fieldClass, "w-36 text-right")}
                       />
                     </td>
-                    <td className="py-3">
+                    <td className="py-2">
                       <input
                         type="number"
                         name="stock"
@@ -304,12 +304,12 @@ export default async function AdminProductPage({
 
       <section className="mt-12 border-t border-rule pt-8">
         <h2 className={sectionTitleClass}>Images</h2>
-        <p className="mt-2 text-[13px] leading-5 text-ink/55">
+        <p className="mt-2 text-[13px] leading-5 text-muted">
           Positions sort ascending. The first image is the card image.
         </p>
 
         {product.images.length === 0 ? (
-          <p className="mt-5 text-[13px] leading-5 text-ink/55">
+          <p className="mt-5 text-[13px] leading-5 text-muted">
             No images.
           </p>
         ) : (
@@ -320,7 +320,7 @@ export default async function AdminProductPage({
               {product.images.map((image) => (
                 <li
                   key={image.id}
-                  className="flex flex-wrap items-center gap-4 py-4"
+                  className="flex flex-wrap items-center gap-4 py-2.5"
                 >
                   <img
                     src={image.url}
@@ -328,14 +328,14 @@ export default async function AdminProductPage({
                     className="h-16 w-16 border border-rule object-cover"
                   />
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-[13px] leading-5 text-ink/70">
+                    <p className="truncate text-[13px] leading-5 text-muted">
                       {image.url}
                     </p>
-                    <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                    <p className="mt-1 text-[13px] leading-4 text-muted">
                       {image.alt}
                     </p>
                   </div>
-                  <label className="flex items-center gap-2 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/55">
+                  <label className="flex items-center gap-2 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                     Position
                     <input
                       type="number"

@@ -33,8 +33,8 @@ export default async function AdminLayout({
 
   return (
     <div>
-      <section className="border-b border-rule">
-        <Container className="flex flex-wrap items-center justify-between gap-4 py-4">
+      <section className="border-b border-rule bg-surface">
+        <Container className="flex flex-wrap items-center justify-between gap-4 py-2.5">
           <p className={eyebrowClass}>Admin console</p>
           <nav aria-label="Admin" className="flex flex-wrap items-center gap-5">
             {TABS.map((tab) => (
@@ -42,7 +42,7 @@ export default async function AdminLayout({
                 key={tab.href}
                 href={tab.href}
                 className={cn(
-                  "text-[13px] leading-5 text-ink/60 transition-colors hover:text-ink",
+                  "text-[11px] font-semibold uppercase leading-4 tracking-[0.14em] text-muted transition-colors hover:text-ink",
                   focusRing,
                 )}
               >

@@ -70,17 +70,17 @@ export default async function CategoryPage({
   return (
     <div>
       <section className="border-b border-rule">
-        <Container className="py-8 lg:py-12">
+        <Container className="py-6 lg:py-10">
           <Breadcrumbs
             items={[
               { label: "Home", href: "/" },
               { label: category.name },
             ]}
           />
-          <div className="mt-8 flex flex-wrap items-end justify-between gap-4">
+          <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className={pageTitleClass}>{category.name}</h1>
-              <p className="mt-3 text-[13px] leading-5 text-ink/55">
+              <p className="mt-2 text-[13px] uppercase tracking-[0.14em] text-muted">
                 {countLabel}
                 {hasFilters ? " matching your filters" : ""}
               </p>
@@ -89,12 +89,12 @@ export default async function CategoryPage({
         </Container>
       </section>
 
-      <Container className="py-8 lg:py-12">
+      <Container className="py-6 lg:py-10">
         <div className="lg:grid lg:grid-cols-[220px_1fr] lg:gap-12 xl:grid-cols-[240px_1fr] xl:gap-16">
           <aside className="hidden lg:block">
-            <div className="sticky top-28">
+            <div className="sticky top-20">
               <h2 className={labelClass}>Filter</h2>
-              <div className="mt-5">
+              <div className="mt-3">
                 <CatalogFilters
                   action={basePath}
                   brands={brands}
@@ -105,14 +105,14 @@ export default async function CategoryPage({
           </aside>
 
           <div>
-            <details className="border-y border-rule py-4 lg:hidden">
-              <summary className="flex items-center justify-between gap-4 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/65">
+            <details className="border-y border-rule lg:hidden">
+              <summary className="flex min-h-11 items-center justify-between gap-4 text-[11px] font-medium uppercase leading-4 tracking-[0.14em] text-ink">
                 <span>Filters</span>
-                <span className="text-ink/40">
+                <span className="text-muted">
                   {hasFilters ? "Active" : "Open"}
                 </span>
               </summary>
-              <div className="pt-7">
+              <div className="pb-6 pt-2">
                 <CatalogFilters
                   action={basePath}
                   brands={brands}
@@ -122,7 +122,9 @@ export default async function CategoryPage({
             </details>
 
             <div className="mt-5 flex items-center justify-between gap-4 lg:mt-0">
-              <p className="text-[13px] text-ink/45 lg:hidden">{countLabel}</p>
+              <p className="text-[13px] uppercase tracking-[0.14em] text-muted lg:hidden">
+                {countLabel}
+              </p>
               <div className="ml-auto">
                 <SortSelect
                   value={filters.sort}
@@ -132,17 +134,17 @@ export default async function CategoryPage({
               </div>
             </div>
 
-            <div className="mt-8">
+            <div className="mt-6">
               {products.length > 0 ? (
                 <ProductGrid products={products} />
               ) : (
                 <div className="border-t border-rule py-16 text-center">
-                  <p className="text-[16px] leading-6 text-ink">
+                  <p className="text-[15px] leading-6 text-ink">
                     {hasFilters
                       ? "No products match these filters."
                       : "No products in this category yet."}
                   </p>
-                  <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-ink/55">
+                  <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-muted">
                     {hasFilters
                       ? "Clear the filters to see the full category."
                       : "The catalogue changes from month to month."}

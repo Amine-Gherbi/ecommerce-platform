@@ -47,7 +47,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
     <div>
       <Link
         href="/account/orders"
-        className={cn("text-[13px] text-ink/55", textLinkClass)}
+        className={cn("text-[13px] text-muted", textLinkClass)}
       >
         Back to orders
       </Link>
@@ -56,11 +56,11 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
         <div>
           <p className={eyebrowClass}>Order</p>
           <h1 className={cn(pageTitleClass, "mt-2")}>{order.number}</h1>
-          <p className="mt-3 text-[13px] leading-5 text-ink/55">
+          <p className="mt-3 text-[13px] leading-5 text-muted">
             Placed {formatOrderDate(order.createdAt)}
           </p>
         </div>
-        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/60">
+        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
           {orderStatusLabel(order.status)}
         </span>
       </div>
@@ -73,7 +73,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
             <table className="w-full min-w-[520px] border-collapse text-left">
               <caption className="sr-only">Items in this order</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   <th scope="col" className="py-3 pr-4 font-medium">
                     Item
                   </th>
@@ -92,17 +92,17 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                 {order.items.map((item) => (
                   <tr key={item.id} className="border-b border-rule">
                     <td className="py-4 pr-4">
-                      <p className="text-[14px] leading-5 text-ink">
+                      <p className="text-[15px] leading-5 text-ink">
                         {item.nameSnapshot}
                       </p>
-                      <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                      <p className="mt-1 text-[13px] leading-4 text-muted">
                         {item.sku}
                       </p>
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/70">
+                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {item.quantity}
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/70">
+                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {formatPrice(item.unitPriceCents)}
                     </td>
                     <td className="py-4 text-right text-[13px] tabular-nums text-ink">
@@ -114,15 +114,15 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
             </table>
           </div>
 
-          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[14px] leading-5">
+          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[15px] leading-5">
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">Subtotal</dt>
+              <dt className="text-muted">Subtotal</dt>
               <dd className="tabular-nums text-ink">
                 {formatPrice(order.subtotalCents)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">Shipping</dt>
+              <dt className="text-muted">Shipping</dt>
               <dd className="tabular-nums text-ink">
                 {order.shippingCents === 0
                   ? "Free"
@@ -131,7 +131,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <dt className="text-ink">Total</dt>
-              <dd className="text-[18px] tabular-nums text-ink">
+              <dd className="text-[17px] tabular-nums text-ink">
                 {formatPrice(order.totalCents)}
               </dd>
             </div>
@@ -142,12 +142,12 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
           <h2 className={sectionTitleClass}>Delivery address</h2>
           <div className="mt-5 border-t border-rule pt-5">
             {address === null ? (
-              <p className="text-[13px] leading-5 text-ink/55">
+              <p className="text-[13px] leading-5 text-muted">
                 The address for this order is not available.
               </p>
             ) : (
-              <address className="not-italic text-[14px] leading-6 text-ink/70">
-                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/45">
+              <address className="not-italic text-[15px] leading-6 text-muted">
+                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   {address.label}
                 </p>
                 <p className="mt-2">{address.line1}</p>
@@ -167,10 +167,10 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
                 key={`${event.label}-${index}`}
                 className="flex items-baseline justify-between gap-4 border-b border-rule py-3"
               >
-                <span className="text-[13px] leading-5 text-ink/70">
+                <span className="text-[13px] leading-5 text-muted">
                   {event.label}
                 </span>
-                <span className="shrink-0 text-[12px] leading-4 text-ink/45">
+                <span className="shrink-0 text-[13px] leading-4 text-muted">
                   {event.at === null ? "Recorded" : formatOrderDate(event.at)}
                 </span>
               </li>

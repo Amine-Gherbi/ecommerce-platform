@@ -35,8 +35,8 @@ function DeleteButton() {
       type="submit"
       disabled={pending}
       className={cn(
-        "text-[13px] text-accent/80 transition-colors hover:text-accent disabled:opacity-40",
-        "underline decoration-transparent underline-offset-4 hover:decoration-accent",
+        "text-[13px] text-muted transition-colors hover:text-ink disabled:opacity-40",
+        "underline decoration-transparent underline-offset-4 hover:decoration-ink",
       )}
     >
       {pending ? "Deleting…" : "Delete"}
@@ -48,7 +48,7 @@ function FieldError({ message }: { message: string }) {
   return (
     <p
       role="alert"
-      className="border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+      className="border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
     >
       {message}
     </p>
@@ -165,7 +165,7 @@ export function AddressForm({
         />
       </div>
 
-      <label className="flex items-center gap-2 text-[13px] leading-5 text-ink/65 sm:col-span-2">
+      <label className="flex items-center gap-2 text-[13px] leading-5 text-muted sm:col-span-2">
         <input
           type="checkbox"
           name="isDefault"
@@ -177,7 +177,7 @@ export function AddressForm({
       <div aria-live="polite" className="sm:col-span-2">
         {state.error !== null ? <FieldError message={state.error} /> : null}
         {state.ok ? (
-          <p className="text-[13px] leading-5 text-ink/60">Address saved.</p>
+          <p className="text-[13px] leading-5 text-muted">Address saved.</p>
         ) : null}
       </div>
 

@@ -92,19 +92,19 @@ export function CheckoutForm({
       <fieldset className="border-t border-rule pt-6">
         <legend className="sr-only">Delivery address</legend>
         <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-[20px] font-medium leading-7 tracking-[-0.01em]">
+          <h2 className="text-[22px] font-medium leading-7 tracking-[-0.01em]">
             Delivery address
           </h2>
           <a
             href="/account/addresses"
-            className="text-[13px] text-ink/55 underline decoration-rule underline-offset-4 hover:decoration-ink"
+            className="text-[13px] text-muted underline decoration-rule underline-offset-4 hover:decoration-ink"
           >
             Manage addresses
           </a>
         </div>
 
         {addresses.length === 0 ? (
-          <p className="mt-4 border-l-2 border-accent pl-3 text-[13px] leading-5 text-ink/65">
+          <p className="mt-4 border-l-2 border-sale pl-3 text-[13px] leading-5 text-muted">
             Add an address above, then place the order.
           </p>
         ) : (
@@ -113,8 +113,8 @@ export function CheckoutForm({
               <li key={address.id}>
                 <label
                   className={cn(
-                    "flex cursor-pointer items-start gap-3 border border-rule p-4 transition-colors",
-                    addressId === address.id ? "border-ink" : "hover:border-ink/40",
+                    "flex cursor-pointer items-start gap-3 border border-control p-4 transition-colors",
+                    addressId === address.id ? "border-accent" : "hover:border-muted",
                   )}
                 >
                   <input
@@ -126,8 +126,8 @@ export function CheckoutForm({
                     className="mt-1"
                     required
                   />
-                  <span className="text-[13px] leading-5 text-ink/70">
-                    <span className="block text-[11px] uppercase tracking-[0.14em] text-ink/45">
+                  <span className="text-[13px] leading-5 text-muted">
+                    <span className="block text-[11px] uppercase tracking-[0.14em] text-muted">
                       {address.label}
                     </span>
                     <span className="mt-1 block">{address.line1}</span>
@@ -148,13 +148,13 @@ export function CheckoutForm({
 
       <div className="border-t border-rule pt-6">
         <div className="border border-rule bg-surface p-4">
-          <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/55">
+          <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
             Payment
           </p>
-          <p className="mt-2 text-[14px] leading-5 text-ink">
+          <p className="mt-2 text-[15px] leading-5 text-ink">
             Simulated payment (demo)
           </p>
-          <p className="mt-1 text-[13px] leading-5 text-ink/55">
+          <p className="mt-1 text-[13px] leading-5 text-muted">
             No card is collected and no money moves. The order stays pending
             until a signed demo webhook confirms it.
           </p>
@@ -166,7 +166,7 @@ export function CheckoutForm({
           {error !== null ? (
             <p
               role="alert"
-              className="border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+              className="border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
             >
               {error}
             </p>

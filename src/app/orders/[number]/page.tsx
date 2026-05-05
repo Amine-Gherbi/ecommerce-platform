@@ -62,7 +62,7 @@ export default async function OrderConfirmationPage({
     <div className="mx-auto w-full max-w-[880px] px-6 py-10 lg:px-10 lg:py-16">
       <Link
         href="/account/orders"
-        className={cn("text-[13px] text-ink/55", textLinkClass)}
+        className={cn("text-[13px] text-muted", textLinkClass)}
       >
         Back to orders
       </Link>
@@ -71,23 +71,23 @@ export default async function OrderConfirmationPage({
         <div>
           <p className={eyebrowClass}>Order confirmation</p>
           <h1 className={cn(pageTitleClass, "mt-2")}>{order.number}</h1>
-          <p className="mt-3 text-[13px] leading-5 text-ink/55">
+          <p className="mt-3 text-[13px] leading-5 text-muted">
             Placed {formatOrderDate(order.createdAt)}
           </p>
         </div>
-        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/60">
+        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
           {orderStatusLabel(order.status)}
         </span>
       </div>
 
       <div className="mt-6 border border-rule bg-surface p-4">
-        <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/55">
+        <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
           Payment
         </p>
-        <p className="mt-2 text-[14px] leading-5 text-ink">
+        <p className="mt-2 text-[15px] leading-5 text-ink">
           Simulated payment (demo)
         </p>
-        <p className="mt-1 text-[13px] leading-5 text-ink/55">
+        <p className="mt-1 text-[13px] leading-5 text-muted">
           {pending
             ? "No card was charged. This order stays pending until the signed demo webhook confirms the amount."
             : "No real money moved. This order reflects the simulated payment webhook for the demo."}
@@ -102,7 +102,7 @@ export default async function OrderConfirmationPage({
             <table className="w-full min-w-[480px] border-collapse text-left">
               <caption className="sr-only">Items in this order</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   <th scope="col" className="py-3 pr-4 font-medium">
                     Item
                   </th>
@@ -118,14 +118,14 @@ export default async function OrderConfirmationPage({
                 {order.items.map((item) => (
                   <tr key={item.id} className="border-b border-rule">
                     <td className="py-4 pr-4">
-                      <p className="text-[14px] leading-5 text-ink">
+                      <p className="text-[15px] leading-5 text-ink">
                         {item.nameSnapshot}
                       </p>
-                      <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                      <p className="mt-1 text-[13px] leading-4 text-muted">
                         {item.sku} · {formatPrice(item.unitPriceCents)} each
                       </p>
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/70">
+                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {item.quantity}
                     </td>
                     <td className="py-4 text-right text-[13px] tabular-nums text-ink">
@@ -137,15 +137,15 @@ export default async function OrderConfirmationPage({
             </table>
           </div>
 
-          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[14px] leading-5">
+          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[15px] leading-5">
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">Subtotal</dt>
+              <dt className="text-muted">Subtotal</dt>
               <dd className="tabular-nums text-ink">
                 {formatPrice(order.subtotalCents)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">
+              <dt className="text-muted">
                 Shipping ({order.deliveryMethod === "EXPRESS" ? "Express" : "Standard"})
               </dt>
               <dd className="tabular-nums text-ink">
@@ -156,7 +156,7 @@ export default async function OrderConfirmationPage({
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <dt className="text-ink">Total</dt>
-              <dd className="text-[18px] tabular-nums text-ink">
+              <dd className="text-[17px] tabular-nums text-ink">
                 {formatPrice(order.totalCents)}
               </dd>
             </div>
@@ -166,7 +166,7 @@ export default async function OrderConfirmationPage({
         <aside className="lg:col-span-4">
           <h2 className={sectionTitleClass}>Delivery</h2>
           <div className="mt-5 border-t border-rule pt-5">
-            <p className="text-[13px] leading-5 text-ink/60">
+            <p className="text-[13px] leading-5 text-muted">
               Estimated{" "}
               <span className="text-ink">
                 {deliveryWindow(order.createdAt, order.deliveryMethod)}
@@ -174,12 +174,12 @@ export default async function OrderConfirmationPage({
             </p>
 
             {address === null ? (
-              <p className="mt-4 text-[13px] leading-5 text-ink/55">
+              <p className="mt-4 text-[13px] leading-5 text-muted">
                 The address for this order is not available.
               </p>
             ) : (
-              <address className="mt-4 not-italic text-[14px] leading-6 text-ink/70">
-                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/45">
+              <address className="mt-4 not-italic text-[15px] leading-6 text-muted">
+                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   {address.label}
                 </p>
                 <p className="mt-2">{address.line1}</p>
@@ -194,7 +194,7 @@ export default async function OrderConfirmationPage({
 
           <Link
             href={`/account/orders/${order.number}`}
-            className={cn("mt-8 inline-block text-[13px] text-ink/60", textLinkClass)}
+            className={cn("mt-8 inline-block text-[13px] text-muted", textLinkClass)}
           >
             View this order in your account
           </Link>

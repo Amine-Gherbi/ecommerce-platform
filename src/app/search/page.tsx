@@ -54,10 +54,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           />
           <div className="mt-8">
             <h1 className={pageTitleClass}>Search</h1>
-            <p className="mt-3 text-[13px] leading-5 text-ink/55">
+            <p className="mt-3 text-[13px] leading-5 text-muted">
               {data.query.length > 0 ? (
                 <>
-                  <span className="text-ink/75">“{data.query}”</span>
+                  <span className="text-ink">“{data.query}”</span>
                   <span aria-hidden="true"> · </span>
                   {countLabel}
                 </>
@@ -72,7 +72,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <Container className="py-8 lg:py-12">
         {data.query.length > 0 ? (
           <div className="flex items-center justify-between gap-4">
-            <p className="text-[13px] text-ink/45">{countLabel}</p>
+            <p className="text-[13px] text-muted">{countLabel}</p>
             <div className="ml-auto">
               <SortSelect
                 value={data.sort}
@@ -91,10 +91,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           <div className="border-t border-rule py-16 text-center">
             {data.query.length > 0 ? (
               <>
-                <p className="text-[16px] leading-6 text-ink">
+                <p className="text-[17px] leading-6 text-ink">
                   No products match “{data.query}”.
                 </p>
-                <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-ink/55">
+                <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-muted">
                   Check the spelling or try a brand, product type or model name.
                 </p>
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-4">
@@ -108,10 +108,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </>
             ) : (
               <>
-                <p className="text-[16px] leading-6 text-ink">
+                <p className="text-[17px] leading-6 text-ink">
                   Start with a product, brand or model.
                 </p>
-                <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-ink/55">
+                <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-muted">
                   The search field is in the header on every page.
                 </p>
                 <Link

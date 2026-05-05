@@ -22,7 +22,7 @@ export default function CreditsPage() {
           />
           <div className="mt-8 max-w-[70ch]">
             <h1 className={pageTitleClass}>Photography credits</h1>
-            <p className="mt-4 text-[14px] leading-6 text-ink/65">
+            <p className="mt-4 text-[15px] leading-6 text-muted">
               Product names and descriptions are fictional. The photographs are
               used under the licences below and are stored in{" "}
               <span className="text-ink">public/products/</span>.
@@ -35,7 +35,7 @@ export default function CreditsPage() {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px] border-collapse text-left text-[13px] leading-5">
             <thead>
-              <tr className="border-b border-rule text-[11px] uppercase tracking-[0.14em] text-ink/50">
+              <tr className="border-b border-rule text-[11px] uppercase tracking-[0.14em] text-muted">
                 <th scope="col" className="py-3 pr-6 font-normal">
                   Product
                 </th>
@@ -60,11 +60,11 @@ export default function CreditsPage() {
                   className="border-b border-rule align-top"
                 >
                   <td className="py-3 pr-6 text-ink">{credit.product}</td>
-                  <td className="py-3 pr-6 text-ink/55">{credit.file}</td>
-                  <td className="whitespace-nowrap py-3 pr-6 text-ink/55">
+                  <td className="py-3 pr-6 text-muted">{credit.file}</td>
+                  <td className="whitespace-nowrap py-3 pr-6 text-muted">
                     {credit.licence}
                   </td>
-                  <td className="py-3 pr-6 text-ink/55">{credit.author}</td>
+                  <td className="py-3 pr-6 text-muted">{credit.author}</td>
                   <td className="py-3">
                     <a
                       href={credit.source}

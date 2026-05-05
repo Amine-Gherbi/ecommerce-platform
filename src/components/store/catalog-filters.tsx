@@ -11,6 +11,9 @@ import {
 } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
+const optionClass =
+  "flex min-h-11 cursor-pointer items-center gap-3 text-[13px] leading-5 text-ink";
+
 export function CatalogFilters({
   action,
   brands,
@@ -28,18 +31,15 @@ export function CatalogFilters({
 
       <fieldset>
         <legend className={labelClass}>Brand</legend>
-        <div className="mt-3 flex flex-col gap-2.5">
+        <div className="mt-2 flex flex-col">
           {brands.map((brand) => (
-            <label
-              key={brand.slug}
-              className="flex cursor-pointer items-center gap-2.5 text-[13px] leading-5 text-ink/75"
-            >
+            <label key={brand.slug} className={optionClass}>
               <input
                 type="checkbox"
                 name="brand"
                 value={brand.slug}
                 defaultChecked={filters.brands.includes(brand.slug)}
-                className="size-3.5 accent-ink"
+                className="size-4 accent-accent"
               />
               <span>{brand.name}</span>
             </label>
@@ -47,30 +47,27 @@ export function CatalogFilters({
         </div>
       </fieldset>
 
-      <fieldset className="border-t border-rule pt-6">
-        <legend className={cn(labelClass, "pt-6")}>Price</legend>
-        <div className="flex flex-col gap-2.5">
-          <label className="flex cursor-pointer items-center gap-2.5 text-[13px] leading-5 text-ink/75">
+      <fieldset className="border-t border-rule pt-5">
+        <legend className={cn(labelClass, "pt-5")}>Price</legend>
+        <div className="flex flex-col">
+          <label className={optionClass}>
             <input
               type="radio"
               name="band"
               value=""
               defaultChecked={filters.band === ""}
-              className="size-3.5 accent-ink"
+              className="size-4 accent-accent"
             />
             <span>All prices</span>
           </label>
           {PRICE_BANDS.map((band) => (
-            <label
-              key={band.id}
-              className="flex cursor-pointer items-center gap-2.5 text-[13px] leading-5 text-ink/75"
-            >
+            <label key={band.id} className={optionClass}>
               <input
                 type="radio"
                 name="band"
                 value={band.id}
                 defaultChecked={filters.band === band.id}
-                className="size-3.5 accent-ink"
+                className="size-4 accent-accent"
               />
               <span>{band.label}</span>
             </label>
@@ -78,15 +75,15 @@ export function CatalogFilters({
         </div>
       </fieldset>
 
-      <fieldset className="border-t border-rule pt-6">
-        <legend className={cn(labelClass, "pt-6")}>Availability</legend>
-        <label className="flex cursor-pointer items-center gap-2.5 text-[13px] leading-5 text-ink/75">
+      <fieldset className="border-t border-rule pt-5">
+        <legend className={cn(labelClass, "pt-5")}>Availability</legend>
+        <label className={optionClass}>
           <input
             type="checkbox"
             name="stock"
             value="1"
             defaultChecked={filters.inStock}
-            className="size-3.5 accent-ink"
+            className="size-4 accent-accent"
           />
           <span>In stock only</span>
         </label>
@@ -96,7 +93,13 @@ export function CatalogFilters({
         <button type="submit" className={primaryButtonClass}>
           Apply filters
         </button>
-        <Link href={action} className={cn("text-[13px] text-ink/65", textLinkClass)}>
+        <Link
+          href={action}
+          className={cn(
+            "inline-flex min-h-11 items-center text-[13px] uppercase tracking-[0.14em] text-muted",
+            textLinkClass,
+          )}
+        >
           Clear filters
         </Link>
       </div>

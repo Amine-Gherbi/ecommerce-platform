@@ -70,7 +70,7 @@ export function SignInForm({ next }: { next: string }) {
         {state.error !== null ? (
           <p
             role="alert"
-            className="border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+            className="border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
           >
             {state.error}
           </p>

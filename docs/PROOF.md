@@ -46,6 +46,65 @@ never executed: `git remote -v` prints nothing. No green CI run is claimed.
 | No live URL | no deployment exists; `git remote -v` is empty; nothing in this repo names a host |
 | CI defined but never run | `.github/workflows/ci.yml:1-7`; `git remote -v` empty |
 
+## Visual identity (P2-R10-theme)
+
+"Cool retail": white paper, cool grey surfaces, one deep teal accent, square
+corners, Inter only. Tokens are defined once in `src/app/globals.css` and
+consumed through Tailwind utilities; `src/lib/styles.ts` holds the shared
+control classes.
+
+| Token | Value | Used for |
+| --- | --- | --- |
+| `page` | `#ffffff` | body and buy box |
+| `surface` | `#f4f6f5` | product tiles, fields, admin nav |
+| `surface-strong` | `#e9efec` | PDP image panel, image placeholders |
+| `ink` | `#0c0f0e` | body text, footer background |
+| `muted` | `#63696b` | secondary text, labels, eyebrows |
+| `control` | `#7f8684` | form fields, secondary buttons, option borders |
+| `rule` | `#e3e7e5` | dividers and table rules (decorative) |
+| `accent` | `#0e5f52` | utility bar, primary buttons, prices, focus ring |
+| `accent-ink` | `#ffffff` | text on accent |
+| `sale` | `#8a2d1f` | errors and refund states only |
+
+Contrast is computed from the sRGB relative-luminance formula (WCAG 2.2
+1.4.3/1.4.11) over the token pairs that actually occur:
+
+| Foreground / background | Ratio | Requirement |
+| --- | --- | --- |
+| ink `#0c0f0e` on page `#ffffff` | **19.26:1** | body ≥ 4.5:1 |
+| ink on surface `#f4f6f5` | **17.75:1** | body ≥ 4.5:1 |
+| ink on surface-strong `#e9efec` | **16.53:1** | body ≥ 4.5:1 |
+| muted `#63696b` on page | **5.58:1** | body ≥ 4.5:1 |
+| muted on surface | **5.14:1** | body ≥ 4.5:1 |
+| muted on surface-strong | **4.79:1** | body ≥ 4.5:1 |
+| accent `#0e5f52` on page | **7.56:1** | body ≥ 4.5:1; large ≥ 3:1 |
+| accent on surface | **6.97:1** | body ≥ 4.5:1 |
+| white `#ffffff` on accent (utility bar, primary buttons) | **7.56:1** | body ≥ 4.5:1 |
+| surface `#f4f6f5` on ink (footer body) | **17.75:1** | body ≥ 4.5:1 |
+| footer-muted `#c3ccc7` on ink | **11.72:1** | body ≥ 4.5:1 |
+| sale `#8a2d1f` on page (error text) | **8.48:1** | body ≥ 4.5:1 |
+| sale on surface | **7.81:1** | body ≥ 4.5:1 |
+| control `#7f8684` on page (field/button boundary) | **3.72:1** | control ≥ 3:1 |
+| control on surface | **3.43:1** | control ≥ 3:1 |
+| control on surface-strong | **3.19:1** | control ≥ 3:1 |
+
+`rule` (`#e3e7e5` on white, 1.25:1) is used only for non-essential dividers and
+never as the only boundary of a control, so 1.4.11 does not apply to it.
+
+Structural proof:
+
+- `rg -n "serif|Iowan|Georgia" src` → no matches (the font stack is
+  `Inter, "Segoe UI", system-ui, Arial, Helvetica`).
+- `rg -n "#faf9f7|#8c2f18" src` → no matches.
+- The 36 px utility bar (`Free delivery over €80 · Ships from Lyon in 1-2
+  business days`) and the ink footer render from `src/app/layout.tsx`, so they
+  appear on every storefront and admin page; the PDP's duplicate delivery
+  sentence was removed (`src/app/p/[slug]/page.tsx`).
+- Product-grid images are `aspect-square` on `bg-surface` with no border or
+  shadow (`src/components/store/product-card.tsx`,
+  `src/components/store/product-grid.tsx`); the PDP keeps its larger 4:3
+  gallery (`src/components/store/gallery.tsx`).
+
 ## The four checkout invariants
 
 The first four are the checkout invariants from `CLAUDE.md`, restated against

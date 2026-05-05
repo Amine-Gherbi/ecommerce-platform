@@ -80,7 +80,7 @@ export function SignUpForm() {
           onChange={(event) => setPassword(event.target.value)}
           className={fieldClass}
         />
-        <p id="signup-password-hint" className="text-[12px] leading-4 text-ink/50">
+        <p id="signup-password-hint" className="text-[13px] leading-4 text-muted">
           At least 10 characters.
         </p>
       </div>
@@ -105,7 +105,7 @@ export function SignUpForm() {
         {state.error !== null ? (
           <p
             role="alert"
-            className="border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+            className="border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
           >
             {state.error}
           </p>

@@ -25,14 +25,14 @@ export function SortSelect({
   }
 
   return (
-    <label className="flex items-center gap-3">
+    <label className="flex min-h-11 items-center gap-3">
       <span className={labelClass}>Sort</span>
       <select
         key={value}
         defaultValue={value}
         aria-label="Sort products"
         onChange={(event) => handleChange(event.target.value)}
-        className={cn(fieldClass, "h-9 w-auto min-w-44 pr-8")}
+        className={cn(fieldClass, "w-auto min-w-44 pr-8")}
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>

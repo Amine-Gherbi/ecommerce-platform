@@ -23,7 +23,7 @@ export default function RootLayout({
         <div className="flex min-h-dvh flex-col">
           <a
             href="#content"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:rounded-[2px] focus:bg-ink focus:px-4 focus:py-2 focus:text-[13px] focus:text-surface"
+            className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:border focus:border-ink focus:bg-ink focus:px-4 focus:py-3 focus:text-[11px] focus:uppercase focus:tracking-[0.14em] focus:text-surface"
           >
             Skip to content
           </a>
