@@ -1,14 +1,13 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Alder & Co.",
-    template: "%s · Alder & Co.",
+    default: "Kestrel Audio",
+    template: "%s · Kestrel Audio",
   },
-  description: "A small storefront built around money correctness.",
+  description: "A hi-fi storefront rebuilt around a cents-only data model.",
 };
 
 export default function RootLayout({
@@ -16,27 +15,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className="min-h-dvh antialiased">
-        <header className="border-b">
-          <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-            <Link href="/" className="text-lg font-semibold tracking-tight">
-              Alder &amp; Co.
-            </Link>
-            <nav className="flex items-center gap-4 text-sm">
-              <Link href="/cart" className="hover:underline">
-                Cart
-              </Link>
-              <Link href="/login" className="hover:underline">
-                Sign in
-              </Link>
-            </nav>
-          </div>
-        </header>
-        {children}
-        <footer className="mx-auto max-w-6xl px-4 py-10 text-sm text-muted-foreground">
-          Prices are integers in cents on the wire and in the database.
-        </footer>
-      </body>
+      <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
 }

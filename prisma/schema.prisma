@@ -1,21 +1,8 @@
-// P2 data model — 12 tables.
+// P2 storefront data model.
 //
-// Eight of them carry the correctness claims (User, Order, Variant, OrderItem,
-// StockReservation, Cart, CartItem, WebhookEvent). Product, Category, Coupon and
-// the single Auth.js adapter table (Account) complete the model.
-//
-// Rules encoded here:
-//   * money is integer cents everywhere; no floats, no client-trusted price
-//   * OrderItem snapshots sku / name / unit price — order history never changes
-//   * Variant is archived, never deleted (order history depends on it)
-//   * one order per (userId, idempotencyKey); the unique index is the arbiter
-//   * stripePaymentIntentId is unique and is the webhook -> order link
-//   * no Session table: Auth.js uses JWT sessions with Credentials
-//
-// Constraints Prisma cannot express are added in the initial migration:
-//   * CHECK (stock >= 0) on Variant
-//   * CHECK (percentOff between 0 and 100) on Coupon
-//   * GIN index over to_tsvector(name || ' ' || description) on Product
+// Money is integer cents everywhere. Product pricing lives only on Variant;
+// order totals are copied into Order, and OrderItem snapshots everything the
+// receipt needs so product edits never rewrite history.
 
 generator client {
   provider = "prisma-client-js"
@@ -31,10 +18,15 @@ enum Role {
   ADMIN
 }
 
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
 enum OrderStatus {
   PENDING
   PAID
-  PAYMENT_FAILED
   FULFILLED
   CANCELLED
   REFUND_REQUIRED
@@ -42,84 +34,81 @@ enum OrderStatus {
 }
 
 model User {
-  id            String    @id @default(uuid(7)) @db.Uuid
-  // Nullable: GitHub accounts with private email return null.
-  email         String?   @unique
-  // Nullable: OAuth-only users have no password.
-  passwordHash  String?
-  name          String?
-  image         String?
-  emailVerified DateTime?
-  role          Role      @default(CUSTOMER)
-  createdAt     DateTime  @default(now())
+  id           String   @id @default(uuid(7)) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(CUSTOMER)
+  createdAt    DateTime @default(now())
 
-  accounts Account[]
-  carts    Cart[]
-  orders   Order[]
+  addresses Address[]
+  carts     Cart[]
+  orders    Order[]
 }
 
-// The only Auth.js adapter table in the model: sessions are stateless JWTs.
-model Account {
-  id                String  @id @default(uuid(7)) @db.Uuid
-  userId            String  @db.Uuid
-  type              String
-  provider          String
-  providerAccountId String
-  refresh_token     String?
-  access_token      String?
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String?
-  session_state     String?
+model Address {
+  id         String  @id @default(uuid(7)) @db.Uuid
+  userId     String  @db.Uuid
+  label      String
+  line1      String
+  line2      String?
+  city       String
+  postalCode String
+  country    String
+  isDefault  Boolean @default(false)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Brand {
+  id   String @id @default(uuid(7)) @db.Uuid
+  name String
+  slug String @unique
+
+  products Product[]
 }
 
 model Category {
-  id   String @id @default(uuid(7)) @db.Uuid
-  slug String @unique
-  name String
+  id       String @id @default(uuid(7)) @db.Uuid
+  name     String
+  slug     String @unique
+  position Int
 
   products Product[]
 }
 
 model Product {
-  id          String    @id @default(uuid(7)) @db.Uuid
-  // Public route identifier; product routes never expose the id.
-  slug        String    @unique
-  name        String
+  id          String        @id @default(uuid(7)) @db.Uuid
+  slug        String        @unique
+  title       String
+  brandId     String        @db.Uuid
+  categoryId  String        @db.Uuid
   description String
-  categoryId  String    @db.Uuid
-  archivedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  specs       Json
+  status      ProductStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
 
-  category Category  @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  brand    Brand    @relation(fields: [brandId], references: [id], onDelete: Restrict)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   variants Variant[]
+  images   ProductImage[]
 
-  // Listing: WHERE categoryId = $1 AND archivedAt IS NULL ORDER BY createdAt DESC.
-  // archivedAt must NOT sit between the equality and the sort key: IS NULL is not
-  // an equality for pathkey purposes, so (categoryId, archivedAt, createdAt) cannot
-  // supply the ordering. (categoryId, createdAt) can, with archivedAt as a filter.
-  @@index([categoryId, createdAt])
+  @@index([brandId])
+  @@index([categoryId, status, createdAt])
 }
 
 model Variant {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  productId  String    @db.Uuid
-  sku        String    @unique
-  name       String
+  id         String @id @default(uuid(7)) @db.Uuid
+  productId  String @db.Uuid
+  sku        String @unique
+  title      String
   priceCents Int
-  // Reservation is UPDATE ... WHERE stock >= qty; the CHECK below is the backstop.
-  stock      Int       @default(0)
-  archivedAt DateTime?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  stock      Int    @default(0)
+  position   Int
 
-  product      Product            @relation(fields: [productId], references: [id], onDelete: Restrict)
+  product      Product            @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems    CartItem[]
   orderItems   OrderItem[]
   reservations StockReservation[]
@@ -127,18 +116,27 @@ model Variant {
   @@index([productId])
 }
 
+model ProductImage {
+  id        String @id @default(uuid(7)) @db.Uuid
+  productId String @db.Uuid
+  url       String
+  alt       String
+  position  Int
+
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
 model Cart {
-  // Supplied by the cart_id cookie (plan §4); existing carts are looked up by id,
-  // so this is the one id that is not generated by the ORM.
-  id        String   @id @db.Uuid
-  userId    String?  @db.Uuid
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid(7)) @db.Uuid
+  userId      String?  @unique @db.Uuid
+  anonymousId String?  @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   user  User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
   items CartItem[]
-
-  @@index([userId])
 }
 
 model CartItem {
@@ -146,8 +144,7 @@ model CartItem {
   cartId    String   @db.Uuid
   variantId String   @db.Uuid
   quantity  Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  addedAt   DateTime @default(now())
 
   cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
@@ -158,34 +155,30 @@ model CartItem {
 
 model Order {
   id             String      @id @default(uuid(7)) @db.Uuid
+  number         String      @unique
   userId         String      @db.Uuid
   status         OrderStatus @default(PENDING)
-  // sha256(cart.id + ':' + cartVersion); the unique index makes double-submit safe.
-  idempotencyKey String
   subtotalCents  Int
-  discountCents  Int         @default(0)
+  shippingCents  Int
   totalCents     Int
-  currency       String      @db.Char(3) @default("usd")
-  // The webhook does not know our order id; this column is the link.
-  stripePaymentIntentId String? @unique
+  currency       String      @default("usd") @db.Char(3)
+  idempotencyKey String
+  address        Json
   createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
+  paidAt         DateTime?
 
   user         User               @relation(fields: [userId], references: [id], onDelete: Restrict)
   items        OrderItem[]
   reservations StockReservation[]
 
   @@unique([userId, idempotencyKey])
-  // Reconciliation: pending orders older than N minutes.
   @@index([status, createdAt])
 }
 
 model OrderItem {
   id             String  @id @default(uuid(7)) @db.Uuid
   orderId        String  @db.Uuid
-  // SetNull, not Cascade: archiving a variant must not touch order history.
   variantId      String? @db.Uuid
-  // Snapshots: history is immutable even if the product changes or is archived.
   sku            String
   nameSnapshot   String
   unitPriceCents Int
@@ -201,36 +194,26 @@ model StockReservation {
   id         String    @id @default(uuid(7)) @db.Uuid
   orderId    String    @db.Uuid
   variantId  String    @db.Uuid
-  qty        Int
+  quantity   Int
   expiresAt  DateTime
   releasedAt DateTime?
-  createdAt  DateTime  @default(now())
 
   order   Order   @relation(fields: [orderId], references: [id], onDelete: Restrict)
   variant Variant @relation(fields: [variantId], references: [id], onDelete: Restrict)
 
   @@unique([orderId, variantId])
-  // Sweeper: releasedAt IS NULL AND expiresAt < now().
   @@index([expiresAt])
   @@index([variantId])
 }
 
-model Coupon {
-  id         String    @id @default(uuid(7)) @db.Uuid
-  code       String    @unique
-  // Percent only for the single seeded coupon; money stays in cents on Order.
-  percentOff Int
-  active     Boolean   @default(true)
-  expiresAt  DateTime?
-  createdAt  DateTime  @default(now())
-}
-
 model WebhookEvent {
-  // Stripe's event id is the idempotency key; insert-on-conflict is the replay guard.
-  stripeEventId String   @id
-  type          String
-  payload       Json
-  processedAt   DateTime @default(now())
+  id          String    @id @default(uuid(7)) @db.Uuid
+  provider    String
+  eventId     String    @unique
+  type        String
+  payload     Json
+  receivedAt  DateTime  @default(now())
+  processedAt DateTime?
 
-  @@index([type, processedAt])
+  @@index([provider, type, receivedAt])
 }
