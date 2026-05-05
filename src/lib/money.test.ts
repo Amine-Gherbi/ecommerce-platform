@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPrice, shippingForSubtotal } from "./money";
+import {
+  formatPrice,
+  shippingForSubtotal,
+  shippingRuleCopy,
+} from "./money";
 
 describe("formatPrice", () => {
   it("renders every amount in euro cents", () => {
@@ -27,5 +31,13 @@ describe("shippingForSubtotal", () => {
   it("charges one express rate regardless of subtotal", () => {
     expect(shippingForSubtotal(1_000, "EXPRESS")).toBe(950);
     expect(shippingForSubtotal(20_000, "EXPRESS")).toBe(950);
+  });
+});
+
+describe("shippingRuleCopy", () => {
+  it("quotes the same threshold and rates the server charges", () => {
+    expect(shippingRuleCopy()).toBe(
+      "Free standard shipping at or above €80.00; otherwise €4.90. Express €9.50.",
+    );
   });
 });
