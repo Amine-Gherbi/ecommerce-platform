@@ -7,7 +7,7 @@ export function ProductCard({ product }: { product: ProductCardModel }) {
   return (
     <article className="group">
       <Link href={`/p/${product.slug}`} className="block">
-        <div className="relative aspect-[4/5] overflow-hidden border border-rule bg-surface">
+        <div className="relative aspect-square overflow-hidden border border-rule bg-surface">
           {product.image !== null ? (
             <Image
               src={product.image.url}

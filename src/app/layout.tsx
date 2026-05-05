@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s · Kestrel Audio",
   },
   description:
-    "A demo hi-fi storefront built around server-rendered prices and a catalogue of headphones, speakers, turntables and accessories.",
+    "Kestrel Audio is a small hi-fi shop in Lyon with a short catalogue of headphones, speakers, turntables and accessories, shipped across France and the European Union.",
 };
 
 export default function RootLayout({
