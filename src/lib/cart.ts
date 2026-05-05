@@ -9,8 +9,8 @@ import { db } from "@/lib/db";
 import {
   FREE_SHIPPING_THRESHOLD_CENTS,
   MAX_CART_QUANTITY,
-  SHIPPING_CENTS,
   formatPrice,
+  shippingForSubtotal,
   shippingRuleCopy,
 } from "@/lib/money";
 
@@ -134,11 +134,10 @@ function summarise(cart: CartRecord): CartPageData {
     (sum, item) => sum + item.variant.priceCents * item.quantity,
     0,
   );
-  const shippingCents =
-    subtotalCents === 0 ||
-    subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
-      ? 0
-      : SHIPPING_CENTS;
+  const shippingCents = shippingForSubtotal(
+    subtotalCents,
+    cart.deliveryMethod,
+  );
 
   return {
     items,

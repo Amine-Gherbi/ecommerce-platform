@@ -8,11 +8,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import type { DeliveryMethod, Prisma } from "@prisma/client";
 
 import { db } from "@/lib/db";
-import {
-  EXPRESS_SHIPPING_CENTS,
-  FREE_SHIPPING_THRESHOLD_CENTS,
-  SHIPPING_CENTS,
-} from "@/lib/money";
+import { shippingForSubtotal } from "@/lib/money";
 
 export interface CartLineKey {
   variantId: string;
@@ -85,23 +81,6 @@ export function cartVersion(lines: readonly CartLineKey[]): string {
     .join("\n");
 
   return createHash("sha256").update(canonical).digest("hex");
-}
-
-export function shippingForSubtotal(
-  subtotalCents: number,
-  deliveryMethod: DeliveryMethod,
-): number {
-  if (subtotalCents === 0) {
-    return 0;
-  }
-
-  if (deliveryMethod === "EXPRESS") {
-    return EXPRESS_SHIPPING_CENTS;
-  }
-
-  return subtotalCents >= FREE_SHIPPING_THRESHOLD_CENTS
-    ? 0
-    : SHIPPING_CENTS;
 }
 
 export function computeTotals(
@@ -286,7 +265,7 @@ export async function placeOrder({
           subtotalCents: totals.subtotalCents,
           shippingCents: totals.shippingCents,
           totalCents: totals.totalCents,
-          currency: "usd",
+          currency: "eur",
           idempotencyKey,
           address: {
             label: address.label,

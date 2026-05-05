@@ -22,7 +22,7 @@ describe("webhook signature and transitions", () => {
     const rawBody = JSON.stringify({
       id: `evt_${randomUUID()}`,
       type: "payment_intent.succeeded",
-      data: { paymentIntentId: "pi_demo_missing", amountCents: 1, currency: "usd" },
+      data: { paymentIntentId: "pi_demo_missing", amountCents: 1, currency: "eur" },
     });
 
     const unsigned = await POST(
@@ -48,7 +48,7 @@ describe("webhook signature and transitions", () => {
       data: {
         paymentIntentId: `pi_demo_${randomUUID()}`,
         amountCents: 1_000,
-        currency: "usd",
+        currency: "eur",
       },
     });
 
