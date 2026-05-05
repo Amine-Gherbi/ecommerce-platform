@@ -73,6 +73,8 @@ Test counts are not metrics and are deliberately not quoted.
 ## Assets
 
 `npm run assets` writes `P:/portfolio/_shared/assets/ecommerce-platform/`:
-four 2880×1800 WebP shots (hero = concurrency terminal beside the checkout page)
-and `manifest.json` with `proof{}`. The database is reseeded `--seed 42` before
-capture; `generatedAt` comes from the last commit, so reruns are stable.
+four 2880×1800 WebP shots — hero = product page photo and buy box, shot-01 =
+category grid with filters, shot-02 = cart table, shot-03 = admin orders — plus
+`manifest.json` with `demoLogin`, `previewCommand` and `proof{}`. The database
+is reseeded `--seed 42` before capture. Capture command, viewport and file sizes:
+[`docs/proof/screenshots.txt`](proof/screenshots.txt).

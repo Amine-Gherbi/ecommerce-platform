@@ -26,18 +26,23 @@ function SearchIcon() {
 
 function SearchForm() {
   return (
-    <form action="/search" method="get" role="search" className="relative">
+    <form
+      action="/search"
+      method="get"
+      role="search"
+      className="flex h-9 w-full border border-rule bg-surface transition-colors focus-within:border-ink"
+    >
       <input
         type="search"
         name="q"
         aria-label="Search products"
         placeholder="Search products"
-        className="h-9 w-full appearance-none border-b border-rule bg-transparent pr-8 text-[13px] text-ink placeholder:text-ink/40 focus:border-ink focus:outline-none"
+        className="h-full min-w-0 flex-1 appearance-none bg-transparent px-3 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none"
       />
       <button
         type="submit"
         aria-label="Search"
-        className={`absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-ink/55 transition-colors hover:text-ink ${focusRing}`}
+        className={`flex h-full w-9 shrink-0 items-center justify-center border-l border-rule text-ink/60 transition-colors hover:bg-ink/[0.04] hover:text-ink ${focusRing}`}
       >
         <SearchIcon />
       </button>

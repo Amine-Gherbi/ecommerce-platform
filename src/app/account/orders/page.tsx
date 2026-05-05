@@ -83,7 +83,7 @@ export default async function OrdersPage() {
                   <td className="py-4 pr-4 text-[12px] uppercase tracking-[0.1em] text-ink/55">
                     {orderStatusLabel(order.status)}
                   </td>
-                  <td className="py-4 text-right text-[14px] tabular-nums text-accent">
+                  <td className="py-4 text-right text-[14px] tabular-nums text-ink">
                     {formatPrice(order.totalCents)}
                   </td>
                 </tr>

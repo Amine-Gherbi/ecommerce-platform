@@ -12,6 +12,7 @@
     "start": "next start",
     "e2e": "playwright test",
     "load": "k6 run load/checkout.js",
+    "assets": "node scripts/capture-screenshots.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

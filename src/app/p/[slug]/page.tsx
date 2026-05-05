@@ -70,7 +70,7 @@ export default async function ProductPage({
             <h1 className="mt-3 text-[28px] font-medium leading-[1.12] tracking-[-0.02em] text-ink lg:text-[40px]">
               {data.title}
             </h1>
-            <p className="mt-5 text-[20px] leading-7 text-accent lg:text-[28px] lg:leading-9">
+            <p className="mt-5 text-[20px] leading-7 tabular-nums text-ink lg:text-[28px] lg:leading-9">
               {data.selectedVariant.price}
             </p>
 
