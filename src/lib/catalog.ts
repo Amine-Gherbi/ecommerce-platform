@@ -104,7 +104,7 @@ export interface ProductDetailData {
   categorySlug: string;
   images: ProductImageModel[];
   specs: { label: string; value: string }[];
-  variants: { id: string; title: string }[];
+  variants: { id: string; title: string; inStock: boolean }[];
   selectedVariant: {
     id: string;
     title: string;
@@ -113,6 +113,10 @@ export interface ProductDetailData {
     maxQuantity: number;
   };
   related: ProductCardModel[];
+}
+
+function isInStock(variant: { stock: number }): boolean {
+  return variant.stock > 0;
 }
 
 function minPrice(product: ProductRecord): number {
@@ -142,7 +146,7 @@ function toCard(product: ProductRecord): ProductCardModel {
     categoryName: product.category.name,
     price,
     pricePrefix,
-    inStock: product.variants.some((variant) => variant.stock > 0),
+    inStock: product.variants.some(isInStock),
     image: product.images[0] ?? null,
   };
 }
@@ -393,8 +397,12 @@ export async function getProductPageData(
     return null;
   }
 
+  // An explicit choice always wins (sold-out variants stay selectable).
+  // Otherwise prefer the first variant the shop can actually sell, and fall
+  // back to the first variant only when the whole product is sold out.
   const selectedVariant =
     product.variants.find((variant) => variant.id === variantParam) ??
+    product.variants.find(isInStock) ??
     firstVariant;
 
   const relatedRecords = await db.product.findMany({
@@ -424,12 +432,13 @@ export async function getProductPageData(
     variants: product.variants.map((variant) => ({
       id: variant.id,
       title: variant.title,
+      inStock: isInStock(variant),
     })),
     selectedVariant: {
       id: selectedVariant.id,
       title: selectedVariant.title,
       price: formatPrice(selectedVariant.priceCents),
-      inStock: selectedVariant.stock > 0,
+      inStock: isInStock(selectedVariant),
       maxQuantity: Math.min(selectedVariant.stock, MAX_CART_QUANTITY),
     },
     related: relatedRecords.map(toCard),

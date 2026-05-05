@@ -11,7 +11,7 @@ export function VariantPicker({
 }: {
   productSlug: string;
   selectedId: string;
-  variants: { id: string; title: string }[];
+  variants: { id: string; title: string; inStock: boolean }[];
 }) {
   const router = useRouter();
 
@@ -33,7 +33,7 @@ export function VariantPicker({
       >
         {variants.map((variant) => (
           <option key={variant.id} value={variant.id}>
-            {variant.title}
+            {variant.inStock ? variant.title : `${variant.title} — Sold out`}
           </option>
         ))}
       </select>
