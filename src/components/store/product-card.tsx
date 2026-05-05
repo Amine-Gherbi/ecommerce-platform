@@ -14,7 +14,7 @@ export function ProductCard({ product }: { product: ProductCardModel }) {
               alt={product.image.alt}
               fill
               sizes="(max-width: 767px) 50vw, (max-width: 1023px) 33vw, 25vw"
-              className="object-cover transition-opacity duration-200 group-hover:opacity-80"
+              className="object-contain p-4 transition-opacity duration-200 group-hover:opacity-80 lg:p-6"
             />
           ) : (
             <div className="flex h-full items-center justify-center px-4 text-center text-[13px] text-muted">

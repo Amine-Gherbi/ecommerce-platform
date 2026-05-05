@@ -56,10 +56,10 @@ control classes.
 | Token | Value | Used for |
 | --- | --- | --- |
 | `page` | `#ffffff` | body and buy box |
-| `surface` | `#f4f6f5` | product tiles, fields, admin nav |
-| `surface-strong` | `#e9efec` | PDP image panel, image placeholders |
+| `surface` | `#f4f6f5` | product cards and PDP tiles, fields, admin nav |
+| `surface-strong` | `#e9efec` | reserved stronger grey step (no consumer after P2-R11) |
 | `ink` | `#0c0f0e` | body text, footer background |
-| `muted` | `#63696b` | secondary text, labels, eyebrows |
+| `muted` | `#52585a` | secondary text, labels, eyebrows |
 | `control` | `#7f8684` | form fields, secondary buttons, option borders |
 | `rule` | `#e3e7e5` | dividers and table rules (decorative) |
 | `accent` | `#0e5f52` | utility bar, primary buttons, prices, focus ring |
@@ -74,9 +74,9 @@ Contrast is computed from the sRGB relative-luminance formula (WCAG 2.2
 | ink `#0c0f0e` on page `#ffffff` | **19.26:1** | body ≥ 4.5:1 |
 | ink on surface `#f4f6f5` | **17.75:1** | body ≥ 4.5:1 |
 | ink on surface-strong `#e9efec` | **16.53:1** | body ≥ 4.5:1 |
-| muted `#63696b` on page | **5.58:1** | body ≥ 4.5:1 |
-| muted on surface | **5.14:1** | body ≥ 4.5:1 |
-| muted on surface-strong | **4.79:1** | body ≥ 4.5:1 |
+| muted `#52585a` on page | **7.24:1** | body ≥ 4.5:1 |
+| muted on surface | **6.67:1** | body ≥ 4.5:1 |
+| muted on surface-strong | **6.21:1** | body ≥ 4.5:1 |
 | accent `#0e5f52` on page | **7.56:1** | body ≥ 4.5:1; large ≥ 3:1 |
 | accent on surface | **6.97:1** | body ≥ 4.5:1 |
 | white `#ffffff` on accent (utility bar, primary buttons) | **7.56:1** | body ≥ 4.5:1 |
@@ -100,10 +100,42 @@ Structural proof:
   business days`) and the ink footer render from `src/app/layout.tsx`, so they
   appear on every storefront and admin page; the PDP's duplicate delivery
   sentence was removed (`src/app/p/[slug]/page.tsx`).
-- Product-grid images are `aspect-square` on `bg-surface` with no border or
-  shadow (`src/components/store/product-card.tsx`,
-  `src/components/store/product-grid.tsx`); the PDP keeps its larger 4:3
-  gallery (`src/components/store/gallery.tsx`).
+- Product-card images are `object-contain` on a `bg-surface` tile with
+  `p-4` padding (`lg:p-6` from 1024 px up); the PDP gallery uses the same
+  tile, padding and fit for its main image and thumbnails
+  (`src/components/store/product-card.tsx`,
+  `src/components/store/gallery.tsx`). No border or shadow.
+
+## Photo tiles and secondary text (P2-R11)
+
+The grid and the PDP show the same photograph files, unchanged, with
+`object-contain` inside one `surface` tile. Each photo keeps its own room
+background, but it is letterboxed inside the same frame instead of being
+cover-cropped to a different composition, so a four-up row reads as one
+catalogue. Product cards use `p-4`/`lg:p-6`; the gallery main image uses
+the same values and its thumbnails use `object-contain p-2`.
+
+Verified visually at 1440x900 and 390x844 CSS px: the four-up grid at 1440
+and the two-up grid at 390 both show a uniform tile with the photograph
+fully inside it.
+
+`muted` moved from `#63696b` to `#52585a` so small uppercase labels and
+secondary lines have headroom above the 4.5:1 floor. Measured with the
+sRGB relative-luminance formula (WCAG 2.2 1.4.3), 2026-10-24:
+
+| Element | Pair | Ratio | Requirement |
+| --- | --- | --- | --- |
+| Product-card brand and sold-out labels | muted `#52585a` on page `#ffffff` | **7.24:1** | ≥ 4.5:1 |
+| "Eight recent additions" (13 px uppercase) | muted on page | **7.24:1** | ≥ 4.5:1 |
+| Breadcrumbs and secondary meta lines | muted on page | **7.24:1** | ≥ 4.5:1 |
+| PDP description and shipping rule | muted on page | **7.24:1** | ≥ 4.5:1 |
+| Product-card unavailable text and field hints | muted on surface `#f4f6f5` | **6.67:1** | ≥ 4.5:1 |
+| Muted text on the strongest grey step | muted on `#e9efec` | **6.21:1** | ≥ 4.5:1 |
+| Footer column headings and legal line | footer-muted `#c3ccc7` on ink `#0c0f0e` | **11.72:1** | ≥ 4.5:1 |
+
+For comparison, the previous `#63696b` measured 5.58:1 on page, 5.14:1 on
+surface and 4.79:1 on surface-strong. The hex values are defined once in
+`src/app/globals.css`; no route, data or test changed in P2-R11.
 
 ## The four checkout invariants
 
