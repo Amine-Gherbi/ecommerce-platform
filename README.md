@@ -36,7 +36,7 @@ Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitiv
 
 `k6 run load/checkout.js` on 2026-10-23: 50 VUs × 5 iterations = 250 checkouts against `next start`, **p95 4.58 s**, **248/250 created**, 750 HTTP requests. The two failures were `P2028` transaction-start timeouts under the default Prisma pool; the database held 248 orders, 248 open reservations and stock 99,752, so neither failure left a partial row. Method, hardware, raw summary and limits: [`docs/load/checkout.md`](docs/load/checkout.md).
 
-`npm run verify` exited 0 on the same machine: ESLint, `tsc --noEmit`, 33 Vitest files / 181 tests with 92.54 % statement coverage, migration drift clean, 5 Playwright tests. CI is defined in `.github/workflows/ci.yml` but has never run (no git remote); no green badge is claimed.
+`npm run verify` exited 0 on the same machine: ESLint, `tsc --noEmit`, 33 Vitest files / 181 tests with 92.54 % statement coverage, migration drift clean, 5 Playwright tests. The same command runs on GitHub Actions: `ci.yml` is green on `master` (run [40081391256](https://github.com/Amine-Gherbi/ecommerce-platform/actions/runs/40081391256), 2026-10-24, 2 m 28 s). The first two runs failed — `psql` rejected Prisma's `?schema=public`, then Vitest found an empty `shop_test` — and both causes are fixed in the workflow.
 
 ## Documentation
 
