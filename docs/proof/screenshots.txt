@@ -2,23 +2,22 @@ Hub asset capture — 2026-10-24
 
 Database: PostgreSQL 16 on port 5433, shop_dev
 Seed:      npx prisma db seed -- --seed 42
-Server:    npx next dev -p 3201 (Next.js 15; port 3000 stopped, port 3200
-           held a stale build)
-Capture:   node scripts/capture-screenshots.mjs with
-           CAPTURE_BASE_URL=http://127.0.0.1:3201
+Build:     npm run build
+Server:    npm run start (Next.js 15 production server on port 3000)
+Capture:   npm run assets (node scripts/capture-screenshots.mjs)
 Viewport:  1440x900 CSS px, deviceScaleFactor 2
 Output:    2880x1800 WebP, quality 100
 Format:    lossy WebP (no lossless metadata, no padding)
 
-hero.webp      469,698 bytes  product page: photo + buy box
-shot-01.webp   500,044 bytes  headphones category with filters
-shot-02.webp   336,860 bytes  cart table: 3 items, two variants
-shot-03.webp   322,202 bytes  admin orders list from the seeded orders
+hero.webp      462,616 bytes  product page: photo + buy box
+shot-01.webp   481,560 bytes  headphones category with filters
+shot-02.webp   337,712 bytes  cart table: 3 items, two variants
+shot-03.webp   297,960 bytes  admin orders list from the seeded orders
 
-All four are at least 300 KB. The dev server was reseeded immediately before
-capture, so no test rows appear in the shots. `devIndicators` is disabled in
-next.config.ts, so the Next.js development badge is not in frame.
+All four are at least 290 KB. The database was reseeded before the build and
+capture, so no test rows appear in the shots. The capture ran against a fresh
+production build, so no Next.js development badge is in frame.
 
-P2-R11: hero.webp and shot-01.webp were checked after the change. Product
-photos are object-contain inside the surface tile at 1440 and at 390 CSS px,
-and the PDP gallery uses the same tile and padding.
+The re-captured UI shows the current header without the delivery notice bar,
+the teal accent, and object-contain product photos inside square pale tiles.
+hero.webp and shot-01.webp confirm the tiles at 1440 CSS px.
