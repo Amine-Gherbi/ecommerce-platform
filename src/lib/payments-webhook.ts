@@ -13,6 +13,7 @@ export type WebhookAction =
   | "ignored"
   | "paid"
   | "refund_required"
+  | "expired"
   | "illegal_transition";
 
 export interface PaymentsEvent {
@@ -165,6 +166,39 @@ export async function processPaymentsEvent(
           `[payments-webhook] amount mismatch event=${event.id} order=${order.id} expected=${order.totalCents} received=${String(event.data.amountCents)} currency=${String(event.data.currency)}`,
         );
         return { action: "refund_required" };
+      }
+
+      // The reservation window is enforced here, on the read path, so a late
+      // webhook cannot spend an expired hold even when the scheduled sweeper
+      // has not run. The database clock is the same one checkout used to set
+      // `expiresAt`. The money did arrive, so the terminal state is
+      // REFUND_REQUIRED and the units go back in this transaction.
+      const [expired] = await tx.$queryRaw<Array<{ expired: boolean }>>`
+        SELECT EXISTS (
+          SELECT 1
+          FROM "StockReservation"
+          WHERE "orderId" = ${order.id}::uuid
+            AND "releasedAt" IS NULL
+            AND "expiresAt" <= now()
+        ) AS expired
+      `;
+
+      if (expired?.expired === true) {
+        const moved = await tx.$executeRaw`
+          UPDATE "Order"
+          SET status = 'REFUND_REQUIRED'
+          WHERE id = ${order.id}::uuid AND status = 'PENDING'
+        `;
+
+        if (moved === 1) {
+          await releaseReservationsForOrder(tx, order.id);
+        }
+
+        await markProcessed(tx, event.id);
+        console.warn(
+          `[payments-webhook] reservation expired event=${event.id} order=${order.id} -> REFUND_REQUIRED`,
+        );
+        return { action: "expired" };
       }
 
       const moved = await tx.$executeRaw`

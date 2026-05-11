@@ -1,0 +1,15 @@
+# Keep secrets and build output out of the image. `.env*` includes `.env`,
+# whose absence is what stops a local DATABASE_URL or Stripe key from being
+# baked into the standalone output.
+node_modules
+.next
+.git
+.env
+.env.*
+coverage
+test-results
+playwright-report
+.superpowers
+.tmp
+*.log
+*.tsbuildinfo

@@ -8,4 +8,4 @@ process.env.DATABASE_URL =
 // Deterministic Stripe webhook secret so integration tests can sign their own
 // deliveries with the SDK's test-header helper. Stripe itself is never called:
 // checkout tests inject a PaymentIntent creator.
-process.env.STRIPE_WEBHOOK_SECRET = "whsec_test_payments_webhook_secret";
+process.env.STRIPE_WEBHOOK_SECRET = "test-payments-webhook-secret-not-a-real-value";

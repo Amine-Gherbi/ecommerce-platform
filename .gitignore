@@ -23,3 +23,6 @@ next-env.d.ts
 # misc
 *.tsbuildinfo
 .DS_Store
+
+# superpowers workspace (ledger for the active card)
+/.superpowers/

@@ -1,0 +1,57 @@
+name: Sweep expired reservations
+
+# Why a GitHub schedule instead of a Render cron job:
+# Render documents that cron jobs are not available on Free instances ("Other
+# service types don't support Free instances"), and its pricing page lists only
+# Starter/Standard instance types for Cron Jobs. The store runs on the free
+# plan, so the authenticated endpoint is triggered from here.
+#
+# Cadence arithmetic (private-repo allowance: 2,000 minutes/month):
+#   * Reservation TTL is 30 minutes (src/lib/checkout.ts).
+#   * An hourly sweep is 24 runs/day x 30 days = 720 runs/month.
+#   * A free Render web service spins down after 15 minutes idle, so every
+#     hourly run pays a ~60 s cold start. GitHub bills a job in whole minutes,
+#     rounded up: 2 minutes per run conservatively.
+#   * 720 x 2 = 1,440 minutes/month, leaving 560 for CI.
+#   * A 30-minute sweep would be 1,440 runs x 2 = 2,880 minutes/month, over the
+#     allowance. 60 minutes is the fastest cadence that fits.
+#   * Expiry does not depend on this timer: the payment webhook refuses an
+#     expired reservation on the read path (src/lib/payments-webhook.ts), so a
+#     late sweep can only delay returning stock, never sell it. With an hourly
+#     sweep the worst-case hold is 90 minutes (30-minute TTL + 60-minute wait).
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+# The job only makes an HTTP request; no repository access is needed.
+permissions: {}
+
+concurrency:
+  group: sweep-reservations
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: sweep
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: POST /api/internal/sweep-reservations
+        env:
+          STORE_BASE_URL: ${{ vars.STORE_BASE_URL }}
+          SWEEPER_SECRET: ${{ secrets.SWEEPER_SECRET }}
+        run: |
+          set -eu
+          if [ -z "${STORE_BASE_URL:-}" ]; then
+            echo "::error::Set the STORE_BASE_URL repository variable (e.g. https://kestrel-store.onrender.com)."
+            exit 1
+          fi
+          if [ -z "${SWEEPER_SECRET:-}" ]; then
+            echo "::error::Set the SWEEPER_SECRET repository secret to the value Render generated."
+            exit 1
+          fi
+          curl --fail-with-body --silent --show-error \
+            --max-time 120 --retry 2 --retry-delay 10 --retry-all-errors \
+            -X POST "${STORE_BASE_URL%/}/api/internal/sweep-reservations" \
+            -H "x-sweeper-secret: ${SWEEPER_SECRET}"
