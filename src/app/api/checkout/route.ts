@@ -8,7 +8,10 @@ export const dynamic = "force-dynamic";
 // The contract is `{addressId, cartVersion}`. Prices in the body are not
 // rejected; they are simply not read. Every number in the response and on the
 // order came from Variant.priceCents inside placeOrder's transaction.
-function payload(order: CheckoutOrder): Record<string, unknown> {
+function payload(
+  order: CheckoutOrder,
+  clientSecret: string | null = null,
+): Record<string, unknown> {
   return {
     number: order.number,
     status: order.status,
@@ -16,6 +19,8 @@ function payload(order: CheckoutOrder): Record<string, unknown> {
     shippingCents: order.shippingCents,
     totalCents: order.totalCents,
     currency: order.currency,
+    paymentIntentId: order.paymentIntentId,
+    clientSecret,
     order,
   };
 }
@@ -51,7 +56,9 @@ export async function POST(request: Request): Promise<Response> {
 
   switch (result.kind) {
     case "created":
-      return Response.json(payload(result.order), { status: 201 });
+      return Response.json(payload(result.order, result.clientSecret), {
+        status: 201,
+      });
 
     case "duplicate":
       // A replay is a success: the same body, so a client that lost the first

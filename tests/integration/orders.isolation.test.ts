@@ -2,12 +2,12 @@ import { randomUUID } from "node:crypto";
 
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { placeOrder } from "@/lib/checkout";
 import { findOrderForCustomer } from "@/lib/orders";
 
 import {
   createOrderAttempt,
   createVariant,
+  placeOrderForTest,
   resetDatabase,
 } from "./helpers";
 
@@ -22,8 +22,8 @@ describe("customer order isolation", () => {
     const stranger = await createOrderAttempt({ variantId });
 
     const [ownerResult, strangerResult] = await Promise.all([
-      placeOrder(owner),
-      placeOrder(stranger),
+      placeOrderForTest(owner),
+      placeOrderForTest(stranger),
     ]);
 
     expect(ownerResult.kind).toBe("created");
@@ -56,7 +56,7 @@ describe("customer order isolation", () => {
   it("does not reveal an order to an unsigned customer id", async () => {
     const { variantId } = await createVariant({ priceCents: 2_000, stock: 5 });
     const owner = await createOrderAttempt({ variantId });
-    const result = await placeOrder(owner);
+    const result = await placeOrderForTest(owner);
     if (result.kind !== "created") {
       throw new Error("expected a created order");
     }

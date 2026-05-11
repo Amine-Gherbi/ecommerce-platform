@@ -45,7 +45,7 @@ bugs — `psql` and an empty `shop_test` — both fixed and recorded in
 | Seed first with `--seed 42` | `npx prisma db seed -- --seed 42` → `seed=42 categories=4 brands=22 products=30 variants=60 …` |
 | Load numbers live in `docs/load/checkout.md` | [`docs/load/checkout.md`](load/checkout.md), produced by `k6 run load/checkout.js` |
 | p95 4.58 s, 248/250, 750 HTTP requests | raw k6 summary in `docs/load/checkout.md`; database counts in the same file |
-| Payments simulated, `pi_demo_*`, no Stripe key | `src/lib/checkout.ts:279`; no `stripe` import under `src/` (`grep -r "from \"stripe\"" src` → no matches) |
+| Stripe sandbox PaymentIntents created server-side | `src/lib/stripe.ts`; `src/lib/checkout.ts:280-286`; `grep -r 'from "stripe"' src` → `src/lib/stripe.ts` |
 | No live URL | no deployment exists; `git remote -v` is empty; nothing in this repo names a host |
 | CI green on `master` | run 40081391256 (2026-10-24); `.github/workflows/ci.yml` |
 
@@ -147,10 +147,10 @@ the code that exists after the rebuild.
 
 | # | Invariant | Code | Test |
 | --- | --- | --- | --- |
-| 1 | Money is integer cents; the client cannot supply a price | `src/lib/checkout.ts:86-107` (`computeTotals` rejects non-integers), `:112-131` (parses only `addressId` and `cartVersion`), `:233` (prices from `Variant.priceCents`); `src/app/api/checkout/route.ts:46-50` | `tests/integration/checkout.forged-price.test.ts:19-87` |
-| 2 | `OrderItem` snapshots `sku`, `nameSnapshot`, `unitPriceCents`; product edits never rewrite history | `prisma/schema.prisma:187-200`; `src/lib/checkout.ts:280-287` | `tests/integration/admin.products.test.ts:116-159`, `:161-215` |
-| 3 | One order per `(userId, idempotencyKey)`; a duplicate returns the existing order | `src/lib/checkout.ts:133-135`, `:166-176`, `:304-323`; unique index `prisma/schema.prisma:183`; route maps `duplicate` to 200 at `src/app/api/checkout/route.ts:56-59` | `tests/integration/checkout.double-submit.test.ts:16-55` |
-| 4 | Stock never goes negative; the reservation is written in the same transaction | `src/lib/checkout.ts:169-303`; conditional `UPDATE … WHERE stock >= ${quantity}` at `:235-244`; reservation rows at `:289-295`; DB `CHECK ("stock" >= 0)` at `prisma/migrations/20261023152658_rebuild/migration.sql:281-283` | `tests/integration/checkout.oversell.test.ts:16-52` |
+| 1 | Money is integer cents; the client cannot supply a price | `src/lib/checkout.ts:103-127` (`computeTotals` rejects non-integers), `:129-148` (parses only `addressId` and `cartVersion`), `:246` (prices from `Variant.priceCents`); `src/app/api/checkout/route.ts:43-49` | `tests/integration/checkout.forged-price.test.ts:19-87` |
+| 2 | `OrderItem` snapshots `sku`, `nameSnapshot`, `unitPriceCents`; product edits never rewrite history | `prisma/schema.prisma:187-200`; `src/lib/checkout.ts:312-314` | `tests/integration/admin.products.test.ts:116-159`, `:161-215` |
+| 3 | One order per `(userId, idempotencyKey)`; a duplicate returns the existing order | `src/lib/checkout.ts:150-152`, `:182`, `:186-192`, `:341-348`; unique index `prisma/schema.prisma:183`; route maps `duplicate` to 200 at `src/app/api/checkout/route.ts:63-66` | `tests/integration/checkout.double-submit.test.ts:16-55` |
+| 4 | Stock never goes negative; the reservation is written in the same transaction | `src/lib/checkout.ts:185-332`; conditional `UPDATE … WHERE stock >= ${quantity}` at `:252-261`; reservation rows at `:318-324`; DB `CHECK ("stock" >= 0)` at `prisma/migrations/20261023152658_rebuild/migration.sql:281-283` | `tests/integration/checkout.oversell.test.ts:16-52` |
 
 ## Webhook behaviours
 
@@ -159,12 +159,13 @@ The route is `src/app/api/webhooks/payments/route.ts`; the domain logic is
 
 | Behaviour | Code | Test |
 | --- | --- | --- |
-| Replay is a 200 no-op: one `WebhookEvent`, no second state change | event row inserted first at `src/lib/payments-webhook.ts:112-119`; unique `eventId` at `prisma/schema.prisma:218-228`; duplicate returns at `:214-218`; route answers 200 at `src/app/api/webhooks/payments/route.ts:40-41` | `tests/integration/webhook.replay.test.ts:19-61` |
-| Illegal transition logs, answers 200, and never downgrades `PAID` | `src/lib/payments-webhook.ts:161-167` (non-PENDING), `:204-209` (lost compare-and-set) | `tests/integration/webhook.transitions.test.ts:61-81` |
-| Unknown PaymentIntent is recorded and answered 200 | `src/lib/payments-webhook.ts:152-159` | `tests/integration/webhook.transitions.test.ts:44-59` |
-| Amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID`, and returns stock | `src/lib/payments-webhook.ts:169-194`; reservation release at `src/lib/reservations.ts:14-45` | `tests/integration/checkout.amount-mismatch.test.ts:19-66` |
-| Signature is checked against the raw bytes; unsigned/wrong-signed is the only 400 | `src/app/api/webhooks/payments/route.ts:16-30`; HMAC over `${t}.${rawBody}` at `src/lib/webhook-signature.ts:13-21`, constant-time compare at `:63-90` | `tests/integration/webhook.transitions.test.ts:21-42`; `src/lib/webhook-signature.test.ts` |
-| Every classified outcome is 200, never 4xx | `src/lib/payments-webhook.ts:105-220` returns `WebhookResult` for replay, ignored, paid, refund_required and illegal_transition; route answers 200 at `:40-41`. A bad signature is the only 400 (`:28-30`); an unhandled database exception becomes a 500, which is deliberate. | replay, transitions and mismatch tests above |
+| Checkout creates the PaymentIntent from the server total, after the stock decrement, and stores its real id | `src/lib/checkout.ts:273-331`; `src/lib/stripe.ts:91-109` | `tests/integration/checkout.payment-intent.test.ts:22-104` |
+| Replay is a 200 no-op: one `WebhookEvent`, no second state change | event row inserted first at `src/lib/payments-webhook.ts:86-93`; unique `eventId` at `prisma/schema.prisma:218-228`; duplicate returns at `:187-190`; route answers 200 at `src/app/api/webhooks/payments/route.ts:47-48` | `tests/integration/webhook.replay.test.ts:20-61` |
+| Illegal transition logs, answers 200, and never downgrades `PAID` | `src/lib/payments-webhook.ts:135-141` (non-PENDING), `:178-183` (lost compare-and-set) | `tests/integration/webhook.transitions.test.ts:95-115` |
+| Unknown PaymentIntent is recorded and answered 200 | `src/lib/payments-webhook.ts:126-133` | `tests/integration/webhook.transitions.test.ts:74-93` |
+| Amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID`, and returns stock | `src/lib/payments-webhook.ts:143-168`; reservation release at `src/lib/reservations.ts:14-45` | `tests/integration/checkout.amount-mismatch.test.ts:20-65` |
+| Signature is checked over the raw bytes by the Stripe SDK; unsigned/wrong-signed and an unconfigured secret are the only 4xx/5xx | `src/app/api/webhooks/payments/route.ts:15-37`; `Stripe.webhooks.constructEvent` at `src/lib/stripe.ts:81-87` | `tests/integration/webhook.transitions.test.ts:24-72`; `src/lib/stripe.test.ts:116-131` |
+| Every classified outcome is 200, never 4xx | `src/lib/payments-webhook.ts:79-190` returns `WebhookResult` for replay, ignored, paid, refund_required and illegal_transition; route answers 200 at `:47-48`. A bad signature is the only 400 (`:27-37`); an unconfigured secret is 503 (`:18-25`); an unhandled database exception becomes a 500, which is deliberate. | replay, transitions and mismatch tests above |
 
 ## Reservation lifecycle
 
@@ -229,7 +230,9 @@ Test counts and coverage are gate results, not performance claims.
   code that polls a payment provider for a webhook that never arrives. The only
   expiry mechanism is the reservation sweeper, which cancels an unpaid
   `PENDING` order after 30 minutes.
-- **No live Stripe.** No `stripe` import exists under `src/`; the PaymentIntent
-  id is generated locally as `pi_demo_*` (`src/lib/checkout.ts:279`).
+- **No live payment proof in this repository.** The Stripe call is exercised
+  against the sandbox, and the test suites inject a PaymentIntent creator so
+  they never reach the network. No test claims a live card charge, and the
+  sandbox keys live outside the tree.
 - **No deployment, but CI now runs.** The store is a local demo; the workflow is
   green on `master` (run 40081391256). See the Gate section.

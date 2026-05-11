@@ -27,6 +27,8 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@node-rs/argon2": "^2.2.2",
     "@prisma/client": "^6.0.0",
+    "@stripe/react-stripe-js": "^7.0.1",
+    "@stripe/stripe-js": "^10.2.0",
     "@tailwindcss/postcss": "^4.3.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

@@ -69,9 +69,23 @@ test.describe("checkout", () => {
       number?: unknown;
       status?: unknown;
       totalCents?: unknown;
+      paymentIntentId?: unknown;
+      clientSecret?: unknown;
     };
     expect(body.status).toBe("PENDING");
     expect(body.number).toMatch(/^KST-\d{4}-[0-9A-F]{8}$/);
+    // The order is bound to the intent the server created, not a local id.
+    expect(body.paymentIntentId).toMatch(/^pi_/);
+    expect(body.clientSecret).toEqual(expect.any(String));
+
+    // The E2E server has no publishable key, so Stripe.js is not loaded and
+    // the page stops at the order-created state. The order and its totals come
+    // from the real transaction.
+    const orderNumber = String(body.number);
+    await expect(
+      page.getByRole("heading", { name: `Pay for ${orderNumber}` }),
+    ).toBeVisible();
+    await page.getByRole("link", { name: "View the order" }).click();
 
     await expect(page).toHaveURL(/\/orders\/KST-/);
     await expect(page.getByText("Order confirmation")).toBeVisible();

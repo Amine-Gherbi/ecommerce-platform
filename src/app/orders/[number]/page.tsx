@@ -85,12 +85,14 @@ export default async function OrderConfirmationPage({
           Payment
         </p>
         <p className="mt-2 text-[15px] leading-5 text-ink">
-          Simulated payment (demo)
+          Stripe sandbox payment
         </p>
         <p className="mt-1 text-[13px] leading-5 text-muted">
           {pending
-            ? "No card was charged. This order stays pending until the signed demo webhook confirms the amount."
-            : "No real money moved. This order reflects the simulated payment webhook for the demo."}
+            ? "The card is collected by Stripe in test mode. This order stays pending until the signed Stripe webhook confirms the amount."
+            : order.status === "PAID" || order.status === "FULFILLED"
+              ? "Stripe confirmed the payment in test mode. No real money moved."
+              : "This order is not paid. Stripe did not confirm a matching amount."}
         </p>
       </div>
 

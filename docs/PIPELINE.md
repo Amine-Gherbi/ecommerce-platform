@@ -97,7 +97,7 @@ PostgreSQL cluster. `DATABASE_URL` is read from `.env` for the drift check.
   `scripts/capture-screenshots.mjs`, which needs a server on port 3000 and
   writes to `../_shared/assets/ecommerce-platform`, outside this repository. A
   workflow cannot write the hub's snapshot, and should not try.
-- **Stripe.** There is no Stripe integration to exercise: payments are
-  simulated, checkout writes a `pi_demo_*` id, and the webhook suites sign
-  their own fixtures. The workflow sets only `AUTH_SECRET` and the two database
-  URLs (`.github/workflows/ci.yml:45-49`).
+- **Stripe.** The checkout suites inject a PaymentIntent creator and the
+  webhook suites sign their own deliveries with the SDK's test-header helper,
+  so CI needs no Stripe key and makes no external call. The workflow sets only
+  `AUTH_SECRET` and the two database URLs (`.github/workflows/ci.yml:45-49`).

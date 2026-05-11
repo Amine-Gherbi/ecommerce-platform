@@ -125,7 +125,8 @@ node scripts/load-fixture.mjs --cleanup
   250. The 13-connection default pool is the reason for the tail; a larger
   pool would move both the p95 and the error count.
 - **Not a network benchmark.** Client, server and database share one host.
-- **Not a Stripe measurement.** Checkout writes a simulated `pi_demo_*`
-  PaymentIntent id; no external payment call is made.
+- **Not a Stripe measurement.** The run predates the provider call: checkout
+  now creates a PaymentIntent after the stock decrement, and that round-trip is
+  not in these numbers.
 - **Not a repeated run.** There is no confidence interval. p99 is an estimate
   from 250 samples.

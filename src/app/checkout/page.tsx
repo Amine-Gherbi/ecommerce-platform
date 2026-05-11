@@ -98,7 +98,8 @@ export default async function CheckoutPage() {
           <h1 className={cn(pageTitleClass, "mt-8")}>Checkout</h1>
           <p className="mt-3 max-w-[60ch] text-[13px] leading-5 text-muted">
             Every price below is recalculated on the server when you place the
-            order. Payment is simulated for this demo.
+            order. Payment runs through Stripe in sandbox (test) mode; the card
+            4242 4242 4242 4242 completes it.
           </p>
         </Container>
       </section>

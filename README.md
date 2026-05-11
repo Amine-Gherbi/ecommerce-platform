@@ -18,7 +18,7 @@ Numbers: [`docs/load/checkout.md`](docs/load/checkout.md) and [`docs/PROOF.md`](
 
 ## Stack
 
-Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Vitest · Playwright · k6. Payments are simulated: the webhook is signed with HMAC-SHA256 and the PaymentIntent id is `pi_demo_*`; there is no Stripe key and no live URL.
+Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Stripe sandbox · Vitest · Playwright · k6. The server creates every PaymentIntent from its own totals; the browser collects the card with the Payment Element and the webhook verifies Stripe's signature with the SDK. There is no live URL.
 
 ## What is proved
 
@@ -31,8 +31,10 @@ Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitiv
 | A replayed webhook is a 200 no-op | `tests/integration/webhook.replay.test.ts` |
 | An illegal transition is a 200 with a log, never a downgrade | `tests/integration/webhook.transitions.test.ts` |
 | An amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID` | `tests/integration/checkout.amount-mismatch.test.ts` |
+| Checkout creates the PaymentIntent from the server total and stores its real `pi_…` id | `tests/integration/checkout.payment-intent.test.ts` |
+| The webhook verifies Stripe's signature with the SDK before touching order state | `tests/integration/webhook.transitions.test.ts` |
 | A product edit or archive does not rewrite order history | `tests/integration/admin.products.test.ts` |
-| Browser checkout charges the server total | `tests/e2e/checkout.spec.ts` |
+| Browser checkout renders the server total and creates the order at it | `tests/e2e/checkout.spec.ts` |
 
 ## Load measurement
 
