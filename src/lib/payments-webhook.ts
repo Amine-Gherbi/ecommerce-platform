@@ -77,6 +77,37 @@ async function markProcessed(
   });
 }
 
+// `expiresAt` is a naive `timestamp(3)` column. Prisma stores the Date that
+// checkout read from `now() + interval` as UTC wall-clock, so the stored text
+// equals `now() AT TIME ZONE 'UTC'` (verified against the row: for a fresh hold
+// the stored value is 30 minutes ahead of the UTC clock). `now()` itself returns
+// `timestamptz`, so `expiresAt <= now()` makes Postgres reinterpret the stored
+// naive value in the session TimeZone: on a session set to Africa/Lagos
+// (UTC+1) a hold with 30 minutes left compares as if it expired 30 minutes
+// ago, and the guard refunds a payment that arrived on time. Comparing against
+// `now() AT TIME ZONE 'UTC'` puts both sides in the column's own
+// representation, so the result is identical in every session timezone, and it
+// keeps the database clock that checkout used. (A Prisma
+// `expiresAt: { lte: new Date() }` filter is also timezone-safe because Prisma
+// binds the Date the same way, but it would compare against the app clock;
+// switching the column to `@db.Timestamptz` would require rewriting existing
+// naive rows under a session-dependent cast.)
+export async function hasExpiredReservation(
+  tx: Prisma.TransactionClient,
+  orderId: string,
+): Promise<boolean> {
+  const [row] = await tx.$queryRaw<Array<{ expired: boolean }>>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM "StockReservation"
+      WHERE "orderId" = ${orderId}::uuid
+        AND "releasedAt" IS NULL
+        AND "expiresAt" <= (now() AT TIME ZONE 'UTC')
+    ) AS expired
+  `;
+  return row?.expired === true;
+}
+
 export async function processPaymentsEvent(
   event: PaymentsEvent,
 ): Promise<WebhookResult> {
@@ -170,20 +201,11 @@ export async function processPaymentsEvent(
 
       // The reservation window is enforced here, on the read path, so a late
       // webhook cannot spend an expired hold even when the scheduled sweeper
-      // has not run. The database clock is the same one checkout used to set
-      // `expiresAt`. The money did arrive, so the terminal state is
-      // REFUND_REQUIRED and the units go back in this transaction.
-      const [expired] = await tx.$queryRaw<Array<{ expired: boolean }>>`
-        SELECT EXISTS (
-          SELECT 1
-          FROM "StockReservation"
-          WHERE "orderId" = ${order.id}::uuid
-            AND "releasedAt" IS NULL
-            AND "expiresAt" <= now()
-        ) AS expired
-      `;
-
-      if (expired?.expired === true) {
+      // has not run. The guard compares against the database clock in the
+      // column's naive-UTC representation (see `hasExpiredReservation`). The
+      // money did arrive, so the terminal state is REFUND_REQUIRED and the
+      // units go back in this transaction.
+      if (await hasExpiredReservation(tx, order.id)) {
         const moved = await tx.$executeRaw`
           UPDATE "Order"
           SET status = 'REFUND_REQUIRED'
@@ -201,9 +223,12 @@ export async function processPaymentsEvent(
         return { action: "expired" };
       }
 
+      // `paidAt` is a naive timestamp too: a bare `now()` would store the
+      // session's local wall-clock and Prisma would read it back shifted. Write
+      // the clock in the same UTC representation Prisma uses.
       const moved = await tx.$executeRaw`
         UPDATE "Order"
-        SET status = 'PAID', "paidAt" = now()
+        SET status = 'PAID', "paidAt" = (now() AT TIME ZONE 'UTC')
         WHERE id = ${order.id}::uuid AND status = 'PENDING'
       `;
 

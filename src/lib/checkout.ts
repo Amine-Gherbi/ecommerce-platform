@@ -261,7 +261,9 @@ export async function placeOrder(
 
       // The reservation window is the database's `now() + 30 minutes`, in the
       // same transaction as the decrement, so app/database clock skew cannot
-      // shorten or extend it.
+      // shorten or extend it. The result is a `timestamptz`; Prisma stores the
+      // Date it maps to in the naive `expiresAt timestamp(3)` column as UTC
+      // wall-clock, which is the representation every later comparison uses.
       const [clock] = await tx.$queryRaw<Array<{ expiresAt: Date }>>`
         SELECT now() + interval '30 minutes' AS "expiresAt"
       `;
