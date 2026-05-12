@@ -147,8 +147,65 @@ export function parseCheckoutBody(
   return { ok: true, addressId: addressId.trim(), cartVersion: version };
 }
 
+// Attempt 0 is the documented `sha256(cartId:version)` key. A later attempt
+// appends `:<n>`, so the key that a terminal, unpaid order still occupies is
+// not reused while every key for this cart version shares the base as a
+// prefix. The `(userId, idempotencyKey)` unique index remains the arbiter for
+// concurrent submits of one attempt.
 function idempotencyKeyFor(cartId: string, version: string): string {
   return createHash("sha256").update(`${cartId}:${version}`).digest("hex");
+}
+
+function idempotencyKeyForAttempt(baseKey: string, attempt: number): string {
+  return attempt === 0 ? baseKey : `${baseKey}:${attempt}`;
+}
+
+interface AttemptResolution {
+  idempotencyKey: string;
+  duplicate: CheckoutOrder | null;
+}
+
+// A cart version can produce more than one order over its lifetime. Only
+// CANCELLED frees the key: it is terminal and unpaid, so there is nothing to
+// charge and nothing for the shopper to resume. Every other status either
+// already holds money or may still receive it, and answers a replay with
+// itself.
+async function resolveAttempt(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  baseKey: string,
+): Promise<AttemptResolution> {
+  const prior = await tx.order.findMany({
+    where: { userId, idempotencyKey: { startsWith: baseKey } },
+    include: orderInclude,
+  });
+
+  let latestAttempt = -1;
+  let blocking: CheckoutOrder | null = null;
+  let blockingAttempt = -1;
+
+  for (const order of prior) {
+    const suffix = order.idempotencyKey.slice(baseKey.length);
+    const attempt = suffix.length === 0 ? 0 : Number(suffix.slice(1));
+    if (!Number.isInteger(attempt) || attempt < 0) {
+      continue;
+    }
+
+    latestAttempt = Math.max(latestAttempt, attempt);
+    if (order.status !== "CANCELLED" && attempt > blockingAttempt) {
+      blockingAttempt = attempt;
+      blocking = order;
+    }
+  }
+
+  if (blocking !== null) {
+    return { idempotencyKey: blocking.idempotencyKey, duplicate: blocking };
+  }
+
+  return {
+    idempotencyKey: idempotencyKeyForAttempt(baseKey, latestAttempt + 1),
+    duplicate: null,
+  };
 }
 
 function orderNumber(orderId: string): string {
@@ -179,16 +236,18 @@ export async function placeOrder(
     return { kind: "no_cart" };
   }
 
-  const idempotencyKey = idempotencyKeyFor(cart.id, submittedVersion);
+  const baseKey = idempotencyKeyFor(cart.id, submittedVersion);
+  let idempotencyKey = baseKey;
 
   try {
     return await db.$transaction(async (tx): Promise<PlaceOrderResult> => {
-      const existing = await tx.order.findUnique({
-        where: { userId_idempotencyKey: { userId, idempotencyKey } },
-        include: orderInclude,
-      });
-      if (existing !== null) {
-        return { kind: "duplicate", order: existing };
+      // A cancelled attempt does not consume its key: resolve which attempt
+      // this submission is before doing any work. Concurrent submits of one
+      // attempt resolve to the same key and the unique index picks the winner.
+      const resolution = await resolveAttempt(tx, userId, baseKey);
+      idempotencyKey = resolution.idempotencyKey;
+      if (resolution.duplicate !== null) {
+        return { kind: "duplicate", order: resolution.duplicate };
       }
 
       const record = await tx.cart.findUnique({

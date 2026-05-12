@@ -20,6 +20,13 @@ Invariants 2 and 8 share a file because the same suite covers both sides of
 "product edits do not rewrite orders"; the line ranges above are separate test
 cases, and either one failing fails the file.
 
+Invariant 3 has one refinement: a terminal, unpaid (`CANCELLED`) order does
+**not** consume its idempotency key. The next submission of the same unchanged
+cart uses the next attempt key (`<base>:<n>`) and creates a new order with a
+new PaymentIntent, while a duplicate of a live (`PENDING`) attempt still
+returns that attempt's order. `tests/integration/checkout.after-cancel.test.ts`
+holds both halves.
+
 ## Run all of them
 
 ```bash
@@ -27,6 +34,7 @@ npx vitest run \
   tests/integration/checkout.forged-price.test.ts \
   tests/integration/admin.products.test.ts \
   tests/integration/checkout.double-submit.test.ts \
+  tests/integration/checkout.after-cancel.test.ts \
   tests/integration/checkout.oversell.test.ts \
   tests/integration/webhook.replay.test.ts \
   tests/integration/webhook.transitions.test.ts \
