@@ -9,6 +9,7 @@ import { VariantPicker } from "@/components/store/variant-picker";
 import { Breadcrumbs, Container } from "@/components/store/ui";
 import { getProductPageData } from "@/lib/catalog";
 import { shippingRuleCopy } from "@/lib/money";
+import { productDescription } from "@/lib/seo";
 import {
   eyebrowClass,
   labelClass,
@@ -37,7 +38,7 @@ export async function generateMetadata({
 
   return {
     title: data.title,
-    description: data.description,
+    description: productDescription(data.title, data.description),
   };
 }
 

@@ -10,6 +10,7 @@ import {
 } from "@/lib/account";
 import { formatPrice } from "@/lib/money";
 import { findOrderForCustomer } from "@/lib/orders";
+import { orderDescription } from "@/lib/seo";
 import { requireUserId } from "@/lib/session";
 import {
   eyebrowClass,
@@ -27,7 +28,10 @@ export async function generateMetadata({
   params,
 }: OrderPageProps): Promise<Metadata> {
   const { number } = await params;
-  return { title: `Order ${number}` };
+  return {
+    title: `Order ${number}`,
+    description: orderDescription(number),
+  };
 }
 
 export default async function OrderDetailPage({ params }: OrderPageProps) {
