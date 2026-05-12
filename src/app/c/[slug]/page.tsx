@@ -80,10 +80,10 @@ export default async function CategoryPage({
           <div className="mt-4 flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className={pageTitleClass}>{category.name}</h1>
-              <p className="mt-2 text-[13px] uppercase tracking-[0.14em] text-muted">
+              <h2 className="mt-2 text-[13px] uppercase tracking-[0.14em] text-muted">
                 {countLabel}
                 {hasFilters ? " matching your filters" : ""}
-              </p>
+              </h2>
             </div>
           </div>
         </Container>
