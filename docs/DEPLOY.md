@@ -153,11 +153,15 @@ Postgres expires after 30 days.
 
 ### Free-plan behaviour that affects measurements
 
-- The service spins down after 15 minutes idle and takes about a minute to
-  wake. Warm it with a request before Lighthouse, k6 or any smoke measurement,
-  and say "free instance, cold start ~60 s" in the write-up.
-- Four services are planned against 750 free instance hours per month; do not
-  add a keep-alive pinger.
+- Free instances scale to zero when nobody asks for them, so a quiet period
+  still ends with a wake. A five-minute HTTP monitor on `/api/health` keeps the
+  demo warm for visitors, and every measurement starts with one warm-up request
+  whose result is thrown away, so a wake never lands in a Lighthouse or k6
+  figure.
+- The free plan grants 750 instance hours per month for the whole workspace,
+  which is roughly one service awake around the clock. Keep-alive pings are
+  therefore budgeted rather than blanket: with four services the monitor set
+  covers a working window, not the full day.
 - The pre-deploy command and cron jobs are not part of the free plan. The
   entrypoint is the release step; the sweeper runs from GitHub Actions (see
   [`OPERATIONS.md`](OPERATIONS.md)).
