@@ -3,8 +3,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { cache } from "react";
 
+import { addToCartAction } from "@/app/cart/actions";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { getProductBySlug, listProductSlugs } from "@/lib/catalog";
 import {
   catalogHref,
@@ -143,28 +145,37 @@ export default async function ProductPage({
                       ? `In stock: ${variant.stock}`
                       : "Out of stock"}
                   </span>
-                  <Button
-                    type="button"
-                    disabled
-                    aria-describedby="cart-arrives"
-                    data-inert-until="m3"
+                  <form
+                    action={addToCartAction}
+                    className="flex items-center gap-2"
                   >
-                    Add to cart
-                  </Button>
+                    <input type="hidden" name="variantId" value={variant.id} />
+                    <Input
+                      name="quantity"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={variant.stock}
+                      step={1}
+                      defaultValue={1}
+                      disabled={variant.stock === 0}
+                      aria-label={`Quantity for ${variant.name}`}
+                      className="h-9 w-20"
+                    />
+                    <Button type="submit" disabled={variant.stock === 0}>
+                      Add to cart
+                    </Button>
+                  </form>
                 </div>
               </li>
             ))}
           </ul>
         )}
 
-        <p
-          id="cart-arrives"
-          className="mt-4 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground"
-        >
-          <strong className="font-medium text-foreground">Not wired yet.</strong>{" "}
-          Add to cart is intentionally inert until M3. The controls are rendered
-          disabled: pressing one sends no request and creates no cart row. M3 adds
-          the <code>cart_id</code> cookie and the real mutation.
+        <p className="mt-4 rounded-lg bg-muted px-4 py-3 text-sm text-muted-foreground">
+          Adding to the cart writes a <code>CartItem</code> row in Postgres. The
+          browser receives an httpOnly <code>cart_id</code> cookie; signing in
+          merges that cart into your account once and clears the cookie.
         </p>
       </section>
     </main>

@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 
+import { hash } from "@node-rs/argon2";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -158,6 +159,19 @@ async function main(): Promise<void> {
     },
   });
 
+  // Local credentials login. The hash is Argon2id (the same algorithm the
+  // Credentials provider verifies with); the password is intentionally a
+  // well-known development credential printed by the login page.
+  await prisma.user.create({
+    data: {
+      id: deterministicUuid7(95_000, `user:${seed}:demo`),
+      email: "demo@alder.test",
+      passwordHash: await hash("demo-password-123"),
+      name: "Demo Customer",
+      role: "CUSTOMER",
+    },
+  });
+
   // Self-checks: the seed contract is executable, not prose.
   const productCount = await prisma.product.count();
   if (productCount !== 40) {
@@ -188,7 +202,7 @@ async function main(): Promise<void> {
     .digest("hex");
 
   console.log(
-    `seed=${seed} categories=${CATEGORIES.length} products=${productCount} variants=${variantTotal} coupons=1 skus_sha256=${skuDigest}`,
+    `seed=${seed} categories=${CATEGORIES.length} products=${productCount} variants=${variantTotal} coupons=1 users=1 skus_sha256=${skuDigest}`,
   );
 }
 

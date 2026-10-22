@@ -19,5 +19,21 @@ export default defineConfig({
     passWithNoTests: true,
     testTimeout: 60_000,
     hookTimeout: 120_000,
+    // The integration suites share one database and one seed; running files in
+    // parallel lets one file's TRUNCATE wipe another's fixtures mid-test.
+    fileParallelism: false,
+    coverage: {
+      provider: "v8",
+      include: ["src/lib/**/*.ts"],
+      // The client factory has no logic of its own; everything else under
+      // src/lib must stay covered, with a floor of 70%.
+      exclude: ["src/lib/db.ts"],
+      reporter: ["text", "text-summary"],
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        statements: 70,
+      },
+    },
   },
 });

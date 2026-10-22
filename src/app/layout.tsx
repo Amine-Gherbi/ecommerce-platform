@@ -22,6 +22,14 @@ export default function RootLayout({
             <Link href="/" className="text-lg font-semibold tracking-tight">
               Alder &amp; Co.
             </Link>
+            <nav className="flex items-center gap-4 text-sm">
+              <Link href="/cart" className="hover:underline">
+                Cart
+              </Link>
+              <Link href="/login" className="hover:underline">
+                Sign in
+              </Link>
+            </nav>
           </div>
         </header>
         {children}
