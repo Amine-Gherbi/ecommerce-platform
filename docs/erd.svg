@@ -1,0 +1,206 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1160" height="860" viewBox="0 0 1160 860" role="img" aria-labelledby="title desc">
+  <title id="title">ecommerce-platform entity relationship diagram</title>
+  <desc id="desc">Twelve tables. User and Account for JWT auth; Category, Product and Variant for the catalog; Cart and CartItem; Order, OrderItem and StockReservation for checkout and stock; Coupon; WebhookEvent for idempotent Stripe events.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+    </marker>
+    <style>
+      .box { fill: #ffffff; stroke: #334155; stroke-width: 1.5; rx: 8; }
+      .head { fill: #1e293b; }
+      .title { fill: #f8fafc; font: 600 15px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .field { fill: #0f172a; font: 12px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .muted { fill: #64748b; font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .rel { stroke: #64748b; stroke-width: 1.5; fill: none; }
+      .label { fill: #475569; font: 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      .note { fill: #475569; font: 13px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <rect width="1160" height="860" fill="#f8fafc"/>
+  <text x="30" y="24" class="note" font-weight="600">ecommerce-platform — M1 schema (12 tables)</text>
+  <text x="30" y="42" class="muted">PK primary key · FK foreign key · UQ unique · dashed = nullable / SetNull relation</text>
+
+  <!-- User -->
+  <g>
+    <rect class="box" x="30" y="70" width="230" height="150"/>
+    <path class="head" d="M30 78 a8 8 0 0 1 8 -8 h214 a8 8 0 0 1 8 8 v24 h-230 z"/>
+    <text x="42" y="94" class="title">User</text>
+    <text x="42" y="122" class="field">id PK uuid(7)</text>
+    <text x="42" y="140" class="field">email UQ (nullable)</text>
+    <text x="42" y="158" class="field">passwordHash (nullable)</text>
+    <text x="42" y="176" class="field">role CUSTOMER | ADMIN</text>
+    <text x="42" y="194" class="muted">no Session table — JWT only</text>
+  </g>
+
+  <!-- Account -->
+  <g>
+    <rect class="box" x="30" y="285" width="230" height="130"/>
+    <path class="head" d="M30 293 a8 8 0 0 1 8 -8 h214 a8 8 0 0 1 8 8 v24 h-230 z"/>
+    <text x="42" y="309" class="title">Account</text>
+    <text x="42" y="337" class="field">id PK uuid(7)</text>
+    <text x="42" y="355" class="field">userId FK → User.id</text>
+    <text x="42" y="373" class="field">provider + providerAccountId UQ</text>
+    <text x="42" y="391" class="field">tokens …</text>
+  </g>
+
+  <!-- Category -->
+  <g>
+    <rect class="box" x="320" y="70" width="190" height="100"/>
+    <path class="head" d="M320 78 a8 8 0 0 1 8 -8 h174 a8 8 0 0 1 8 8 v24 h-190 z"/>
+    <text x="332" y="94" class="title">Category</text>
+    <text x="332" y="122" class="field">id PK uuid(7)</text>
+    <text x="332" y="140" class="field">slug UQ</text>
+    <text x="332" y="158" class="field">name</text>
+  </g>
+
+  <!-- Product -->
+  <g>
+    <rect class="box" x="565" y="70" width="230" height="160"/>
+    <path class="head" d="M565 78 a8 8 0 0 1 8 -8 h214 a8 8 0 0 1 8 8 v24 h-230 z"/>
+    <text x="577" y="94" class="title">Product</text>
+    <text x="577" y="122" class="field">id PK uuid(7)</text>
+    <text x="577" y="140" class="field">slug UQ (public route)</text>
+    <text x="577" y="158" class="field">categoryId FK → Category.id</text>
+    <text x="577" y="176" class="field">archivedAt (never delete)</text>
+    <text x="577" y="194" class="muted">idx (categoryId, archivedAt, createdAt)</text>
+    <text x="577" y="212" class="muted">GIN to_tsvector(name || desc)</text>
+  </g>
+
+  <!-- Variant -->
+  <g>
+    <rect class="box" x="850" y="70" width="280" height="180"/>
+    <path class="head" d="M850 78 a8 8 0 0 1 8 -8 h264 a8 8 0 0 1 8 8 v24 h-280 z"/>
+    <text x="862" y="94" class="title">Variant</text>
+    <text x="862" y="122" class="field">id PK uuid(7)</text>
+    <text x="862" y="140" class="field">sku UQ</text>
+    <text x="862" y="158" class="field">productId FK → Product.id</text>
+    <text x="862" y="176" class="field">priceCents INT</text>
+    <text x="862" y="194" class="field">stock INT CHECK (stock &gt;= 0)</text>
+    <text x="862" y="212" class="field">archivedAt</text>
+    <text x="862" y="234" class="muted">reserve: stock = stock - qty</text>
+  </g>
+
+  <!-- Cart -->
+  <g>
+    <rect class="box" x="320" y="300" width="190" height="100"/>
+    <path class="head" d="M320 308 a8 8 0 0 1 8 -8 h174 a8 8 0 0 1 8 8 v24 h-190 z"/>
+    <text x="332" y="324" class="title">Cart</text>
+    <text x="332" y="352" class="field">id PK (cookie uuid)</text>
+    <text x="332" y="370" class="field">userId FK (nullable)</text>
+    <text x="332" y="388" class="field">expiresAt</text>
+  </g>
+
+  <!-- CartItem -->
+  <g>
+    <rect class="box" x="565" y="300" width="230" height="120"/>
+    <path class="head" d="M565 308 a8 8 0 0 1 8 -8 h214 a8 8 0 0 1 8 8 v24 h-230 z"/>
+    <text x="577" y="324" class="title">CartItem</text>
+    <text x="577" y="352" class="field">id PK uuid(7)</text>
+    <text x="577" y="370" class="field">cartId FK → Cart.id</text>
+    <text x="577" y="388" class="field">variantId FK → Variant.id</text>
+    <text x="577" y="406" class="field">quantity · UQ (cartId, variantId)</text>
+  </g>
+
+  <!-- Coupon -->
+  <g>
+    <rect class="box" x="30" y="520" width="230" height="120"/>
+    <path class="head" d="M30 528 a8 8 0 0 1 8 -8 h214 a8 8 0 0 1 8 8 v24 h-230 z"/>
+    <text x="42" y="544" class="title">Coupon</text>
+    <text x="42" y="572" class="field">id PK uuid(7)</text>
+    <text x="42" y="590" class="field">code UQ (SAVE10 seeded)</text>
+    <text x="42" y="608" class="field">percentOff CHECK 0..100</text>
+    <text x="42" y="626" class="field">active · expiresAt</text>
+  </g>
+
+  <!-- Order -->
+  <g>
+    <rect class="box" x="320" y="520" width="250" height="200"/>
+    <path class="head" d="M320 528 a8 8 0 0 1 8 -8 h234 a8 8 0 0 1 8 8 v24 h-250 z"/>
+    <text x="332" y="544" class="title">Order</text>
+    <text x="332" y="572" class="field">id PK uuid(7)</text>
+    <text x="332" y="590" class="field">userId FK → User.id</text>
+    <text x="332" y="608" class="field">status OrderStatus</text>
+    <text x="332" y="626" class="field">idempotencyKey</text>
+    <text x="332" y="644" class="field">subtotal / discount / totalCents</text>
+    <text x="332" y="662" class="field">currency CHAR(3)</text>
+    <text x="332" y="680" class="field">stripePaymentIntentId UQ?</text>
+    <text x="332" y="702" class="muted">UQ (userId, idempotencyKey)</text>
+  </g>
+
+  <!-- OrderItem -->
+  <g>
+    <rect class="box" x="630" y="520" width="250" height="160"/>
+    <path class="head" d="M630 528 a8 8 0 0 1 8 -8 h234 a8 8 0 0 1 8 8 v24 h-250 z"/>
+    <text x="642" y="544" class="title">OrderItem</text>
+    <text x="642" y="572" class="field">id PK uuid(7)</text>
+    <text x="642" y="590" class="field">orderId FK → Order.id</text>
+    <text x="642" y="608" class="field">variantId FK? (SetNull)</text>
+    <text x="642" y="626" class="field">sku (snapshot)</text>
+    <text x="642" y="644" class="field">nameSnapshot (snapshot)</text>
+    <text x="642" y="662" class="field">unitPriceCents · quantity</text>
+  </g>
+
+  <!-- StockReservation -->
+  <g>
+    <rect class="box" x="940" y="360" width="190" height="150"/>
+    <path class="head" d="M940 368 a8 8 0 0 1 8 -8 h174 a8 8 0 0 1 8 8 v24 h-190 z"/>
+    <text x="952" y="384" class="title">StockReservation</text>
+    <text x="952" y="412" class="field">id PK uuid(7)</text>
+    <text x="952" y="430" class="field">orderId FK</text>
+    <text x="952" y="448" class="field">variantId FK</text>
+    <text x="952" y="466" class="field">qty · expiresAt</text>
+    <text x="952" y="484" class="field">releasedAt</text>
+    <text x="952" y="502" class="muted">UQ (orderId, variantId)</text>
+  </g>
+
+  <!-- WebhookEvent -->
+  <g>
+    <rect class="box" x="630" y="740" width="250" height="100"/>
+    <path class="head" d="M630 748 a8 8 0 0 1 8 -8 h234 a8 8 0 0 1 8 8 v24 h-250 z"/>
+    <text x="642" y="764" class="title">WebhookEvent</text>
+    <text x="642" y="792" class="field">stripeEventId PK</text>
+    <text x="642" y="810" class="field">type · payload JSON</text>
+    <text x="642" y="828" class="field">processedAt — replay ⇒ 200 no-op</text>
+  </g>
+
+  <!-- Relations -->
+  <path class="rel" d="M130 220 L130 285" marker-end="url(#arrow)"/>
+  <text x="138" y="258" class="label">1 — n</text>
+
+  <path class="rel" d="M225 155 L320 125" marker-end="url(#arrow)"/>
+  <text x="250" y="130" class="label">n — 1</text>
+
+  <path class="rel" d="M510 120 L565 120" marker-end="url(#arrow)"/>
+  <text x="518" y="112" class="label">1 — n</text>
+
+  <path class="rel" d="M795 150 L850 150" marker-end="url(#arrow)"/>
+  <text x="804" y="142" class="label">1 — n</text>
+
+  <path class="rel" d="M225 205 L320 330" marker-end="url(#arrow)"/>
+  <text x="240" y="280" class="label">1 — n</text>
+
+  <path class="rel" d="M510 350 L565 350" marker-end="url(#arrow)"/>
+  <text x="518" y="342" class="label">1 — n</text>
+
+  <path class="rel" d="M795 380 L850 190" marker-end="url(#arrow)"/>
+  <text x="812" y="290" class="label">n — 1</text>
+
+  <path class="rel" d="M225 240 L320 560" marker-end="url(#arrow)"/>
+  <text x="250" y="430" class="label">1 — n</text>
+
+  <path class="rel" d="M570 630 L630 620" marker-end="url(#arrow)"/>
+  <text x="584" y="612" class="label">1 — n</text>
+
+  <path class="rel" d="M880 620 L850 280" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+  <text x="872" y="450" class="label">n — 1?</text>
+
+  <path class="rel" d="M570 690 L940 440" marker-end="url(#arrow)"/>
+  <text x="760" y="560" class="label">1 — n</text>
+
+  <path class="rel" d="M1040 360 L1040 250" marker-end="url(#arrow)"/>
+  <text x="1048" y="320" class="label">n — 1</text>
+
+  <path class="rel" d="M1090 360 L880 780" stroke-dasharray="6 4" marker-end="url(#arrow)"/>
+</svg>
