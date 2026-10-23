@@ -3,6 +3,11 @@ import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
 import { isTransitionAllowed, releasesStock } from "@/lib/order-state";
+import {
+  applyTransition,
+  releaseReservations,
+  settlesFully,
+} from "@/lib/orders";
 
 // Stripe event processing.
 //
@@ -13,8 +18,6 @@ import { isTransitionAllowed, releasesStock } from "@/lib/order-state";
 //   2. An illegal or late transition is not an error. The event is recorded,
 //      the transition is skipped, and the route still answers 200 — Stripe
 //      retries non-2xx for three days, and retrying a lost race cannot help.
-
-type Tx = Prisma.TransactionClient;
 
 export interface WebhookOutcome {
   action: "processed" | "ignored" | "illegal";
@@ -60,77 +63,6 @@ function planFor(event: Stripe.Event): EventPlan | null {
     }
     default:
       return null;
-  }
-}
-
-interface OrderRow {
-  id: string;
-  status: OrderStatus;
-  subtotalCents: number;
-  discountCents: number;
-  totalCents: number;
-  currency: string;
-}
-
-/**
- * The money check that must pass before an order may become PAID.
- *
- * Three independent facts: Stripe received the order's total in the order's
- * currency, the item snapshots still add up to the stored subtotal, and the
- * stored subtotal minus discount is the stored total. Any disagreement means
- * the two systems do not agree about money, which is never something to paper
- * over: the order goes to REFUND_REQUIRED instead.
- */
-async function settlesFully(
-  tx: Tx,
-  order: OrderRow,
-  intent: Stripe.PaymentIntent,
-): Promise<boolean> {
-  if (intent.currency.toLowerCase() !== order.currency.toLowerCase()) {
-    return false;
-  }
-  if (intent.amount_received !== order.totalCents) {
-    return false;
-  }
-  if (order.subtotalCents - order.discountCents !== order.totalCents) {
-    return false;
-  }
-
-  const items = await tx.orderItem.findMany({
-    where: { orderId: order.id },
-    select: { unitPriceCents: true, quantity: true },
-  });
-  let itemSum = 0;
-  for (const item of items) {
-    itemSum += item.unitPriceCents * item.quantity;
-  }
-  return itemSum === order.subtotalCents;
-}
-
-/**
- * Returns reserved units to the shelf. The reservation row is kept and stamped
- * `releasedAt`; deleting it would erase the audit trail.
- */
-async function releaseReservations(tx: Tx, orderId: string): Promise<void> {
-  const reservations = await tx.stockReservation.findMany({
-    where: { orderId, releasedAt: null },
-    select: { id: true, variantId: true, qty: true },
-    orderBy: { variantId: "asc" },
-  });
-  if (reservations.length === 0) {
-    return;
-  }
-
-  const releasedAt = new Date();
-  for (const reservation of reservations) {
-    await tx.variant.update({
-      where: { id: reservation.variantId },
-      data: { stock: { increment: reservation.qty } },
-    });
-    await tx.stockReservation.update({
-      where: { id: reservation.id },
-      data: { releasedAt },
-    });
   }
 }
 
@@ -204,11 +136,8 @@ export async function processStripeEvent(
 
       // Compare-and-set: the status read above is the expected value, so a
       // concurrent webhook that moved the order first makes this a no-op.
-      const applied = await tx.order.updateMany({
-        where: { id: order.id, status: order.status },
-        data: { status: target },
-      });
-      if (applied.count !== 1) {
+      const applied = await applyTransition(tx, order.id, order.status, target);
+      if (!applied) {
         console.warn(
           `[webhook] lost race applying ${target} to order ${order.id} (${event.id})`,
         );

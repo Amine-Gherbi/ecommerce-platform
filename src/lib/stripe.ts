@@ -1,5 +1,12 @@
 import Stripe from "stripe";
 
+import type {
+  PaymentIntentReader,
+  PaymentIntentSnapshot,
+  PaymentIntentStatus,
+  RefundGateway,
+} from "@/lib/orders";
+
 // Stripe is the only external service on the checkout path. Everything in this
 // module is resolved lazily from `process.env` at call time, so a test can set
 // a webhook secret per suite without reloading the module graph.
@@ -178,4 +185,70 @@ export function verifyStripeEvent(
       error instanceof Error ? error.message : "signature verification failed",
     );
   }
+}
+
+/**
+ * The real Stripe implementation of the reconciliation job's only dependency.
+ *
+ * Kept behind `PaymentIntentReader` so tests inject a fixture instead of
+ * needing a key, and so the job never imports the SDK directly. Without a key
+ * the reader throws `StripeNotConfiguredError`; the job counts that order as
+ * failed and continues with the rest of the batch.
+ */
+function normalizeIntentStatus(
+  status: Stripe.PaymentIntent.Status,
+): PaymentIntentStatus {
+  switch (status) {
+    case "requires_payment_method":
+      return "requires_payment_method";
+    case "requires_confirmation":
+      return "requires_confirmation";
+    case "requires_action":
+      return "requires_action";
+    case "processing":
+      return "processing";
+    case "requires_capture":
+      return "requires_capture";
+    case "canceled":
+      return "canceled";
+    case "succeeded":
+      return "succeeded";
+    default:
+      // A status newer than this build is still in flight as far as the job
+      // is concerned; the sweeper owns eventual expiry.
+      return "processing";
+  }
+}
+
+export function createPaymentIntentReader(): PaymentIntentReader {
+  return {
+    async retrievePaymentIntent(id: string): Promise<PaymentIntentSnapshot> {
+      const intent = await getStripe().paymentIntents.retrieve(id);
+      return {
+        id: intent.id,
+        status: normalizeIntentStatus(intent.status),
+        amount: intent.amount,
+        amount_received: intent.amount_received,
+        currency: intent.currency,
+      };
+    },
+  };
+}
+
+/**
+ * The real Stripe implementation of the refund path.
+ *
+ * The idempotency key is supplied by the caller (it is derived from our order
+ * id), so retrying an ambiguous failure cannot create a second refund.
+ */
+export function createRefundGateway(): RefundGateway {
+  return {
+    async refund(paymentIntentId: string, idempotencyKey: string) {
+      const refund = await getStripe().refunds.create(
+        { payment_intent: paymentIntentId },
+        { idempotencyKey },
+      );
+      return { id: refund.id, status: refund.status ?? "unknown" };
+    },
+  };
 }
