@@ -49,6 +49,11 @@ export async function AccountNav() {
       </summary>
 
       <div className="absolute right-0 top-full z-50 mt-3 w-48 border border-rule bg-surface py-1 shadow-[0_10px_30px_rgba(17,17,16,0.08)]">
+        {session.user.role === "ADMIN" ? (
+          <Link href="/admin" className={menuLinkClass}>
+            Admin console
+          </Link>
+        ) : null}
         <Link href="/account" className={menuLinkClass}>
           Account overview
         </Link>

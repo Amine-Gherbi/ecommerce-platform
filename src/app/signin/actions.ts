@@ -38,11 +38,11 @@ export async function signInAction(
     .trim()
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
-  const next = safeNextPath(
-    typeof formData.get("next") === "string"
-      ? (formData.get("next") as string)
-      : undefined,
-  );
+  const nextValue = formData.get("next");
+  const requestedNext =
+    typeof nextValue === "string" && nextValue.trim().length > 0
+      ? safeNextPath(nextValue)
+      : null;
 
   if (email.length === 0 || password.length === 0) {
     return { error: "Enter your email and password to sign in." };
@@ -59,7 +59,7 @@ export async function signInAction(
       email,
       password,
       redirect: false,
-      redirectTo: next,
+      redirectTo: requestedNext ?? "/account",
     });
     redirectUrl = typeof result === "string" ? result : "";
   } catch (error: unknown) {
@@ -75,7 +75,7 @@ export async function signInAction(
 
   const user = await db.user.findUnique({
     where: { email },
-    select: { id: true },
+    select: { id: true, role: true },
   });
   if (user === null) {
     recordFailedAttempt(key);
@@ -91,5 +91,7 @@ export async function signInAction(
   }
 
   resetRateLimit(key);
-  redirect(next);
+  redirect(
+    requestedNext ?? (user.role === "ADMIN" ? "/admin" : "/account"),
+  );
 }
