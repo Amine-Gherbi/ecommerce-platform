@@ -167,7 +167,7 @@ model Order {
   subtotalCents   Int
   shippingCents   Int
   totalCents      Int
-  currency        String         @default("usd") @db.Char(3)
+  currency        String         @default("eur") @db.Char(3)
   idempotencyKey  String
   address         Json
   deliveryMethod  DeliveryMethod @default(STANDARD)

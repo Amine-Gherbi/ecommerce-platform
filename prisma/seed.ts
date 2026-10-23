@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { hash } from "@node-rs/argon2";
 import { PrismaClient } from "@prisma/client";
 
+import { shippingForSubtotal } from "../src/lib/money";
+
 const prisma = new PrismaClient();
 
 // Fixed epoch for deterministic seed ids. The catalog is rebuilt from scratch
@@ -935,33 +937,33 @@ async function main(): Promise<void> {
       id: deterministicUuid7(5_100, `address:${seed}:home`),
       userId: demoUserId,
       label: "Home",
-      line1: "18 Kestrel Lane",
+      line1: "18 Rue de la République",
       line2: "Apt 4B",
-      city: "Portland",
-      postalCode: "97205",
-      country: "United States",
+      city: "Lyon",
+      postalCode: "69001",
+      country: "France",
       isDefault: true,
     },
     {
       id: deterministicUuid7(5_101, `address:${seed}:office`),
       userId: demoUserId,
       label: "Office",
-      line1: "240 Alder Street",
+      line1: "240 Rue Garibaldi",
       line2: "Floor 3",
-      city: "Portland",
-      postalCode: "97209",
-      country: "United States",
+      city: "Lyon",
+      postalCode: "69001",
+      country: "France",
       isDefault: false,
     },
     {
       id: deterministicUuid7(5_102, `address:${seed}:studio`),
       userId: demoUserId,
       label: "Studio",
-      line1: "77 Foundry Road",
+      line1: "77 Cours Émile Zola",
       line2: "Unit 12",
-      city: "Beaverton",
-      postalCode: "97005",
-      country: "United States",
+      city: "Villeurbanne",
+      postalCode: "69100",
+      country: "France",
       isDefault: false,
     },
   ] as const;
@@ -1002,7 +1004,7 @@ async function main(): Promise<void> {
     (sum, item) => sum + item.unitPriceCents * item.quantity,
     0,
   );
-  const paidShipping = 900;
+  const paidShipping = shippingForSubtotal(paidSubtotal, "STANDARD");
 
   const fulfilledItems = [
     line("PRJ-DEBUT2-WINE-RED", 1),
@@ -1023,7 +1025,7 @@ async function main(): Promise<void> {
       subtotalCents: paidSubtotal,
       shippingCents: paidShipping,
       totalCents: paidSubtotal + paidShipping,
-      currency: "usd",
+      currency: "eur",
       idempotencyKey: `seed-order-paid-${seed}`,
       address: shippingAddress,
       createdAt: ORDER_EPOCH,
@@ -1041,7 +1043,7 @@ async function main(): Promise<void> {
       subtotalCents: fulfilledSubtotal,
       shippingCents: fulfilledShipping,
       totalCents: fulfilledSubtotal + fulfilledShipping,
-      currency: "usd",
+      currency: "eur",
       idempotencyKey: `seed-order-fulfilled-${seed}`,
       address: shippingAddress,
       createdAt: new Date(ORDER_EPOCH.getTime() + 86_400_000),

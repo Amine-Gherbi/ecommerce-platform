@@ -59,7 +59,7 @@ export const PHOTO_CREDITS: PhotoCredit[] = [
     product: "Sennheiser HD 598",
     file: "sennheiser-hd598-over-ear.jpg",
     licence: "CC BY 2.0",
-    author: "Tony Webster from Minneapolis, Minnesota, United States",
+    author: "Tony Webster from Minneapolis, Minnesota, USA",
     source:
       "https://commons.wikimedia.org/wiki/File:Sennheiser_HD_598_over-ear_headphones_(31514940057).jpg",
   },

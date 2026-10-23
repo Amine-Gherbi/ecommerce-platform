@@ -100,7 +100,7 @@ export default async function ProductPage({
               />
 
               <p className="max-w-[52ch] text-[13px] leading-5 text-ink/50">
-                Ships from Portland, Oregon. {shippingRuleCopy()}
+                Ships from Lyon, France. {shippingRuleCopy()}
               </p>
             </div>
           </div>

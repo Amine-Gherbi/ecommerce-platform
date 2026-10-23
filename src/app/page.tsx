@@ -20,7 +20,7 @@ export default async function HomePage() {
       <section className="border-b border-rule">
         <Container className="grid gap-10 py-10 lg:grid-cols-12 lg:items-end lg:gap-12 lg:py-16">
           <div className="lg:col-span-5 lg:pb-2">
-            <p className={eyebrowClass}>Portland, Oregon</p>
+            <p className={eyebrowClass}>Lyon, France</p>
             <h1 className="mt-5 max-w-[19ch] text-[28px] font-medium leading-[1.08] tracking-[-0.02em] text-ink lg:text-[40px]">
               A short catalogue of{" "}
               <span className="whitespace-nowrap">hi-fi</span> equipment.
@@ -28,7 +28,7 @@ export default async function HomePage() {
             <p className="mt-5 max-w-[42ch] text-[16px] leading-7 text-ink/65">
               Headphones, speakers, turntables and the parts that connect them.
               Prices are in euros, and every order ships from our warehouse in
-              Portland.
+              Lyon.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-6">
               <Link href="#new-this-month" className={primaryButtonClass}>
@@ -142,11 +142,11 @@ export default async function HomePage() {
         <Container className="grid gap-6 py-12 lg:grid-cols-12 lg:gap-12 lg:py-20">
           <p className={cn(eyebrowClass, "lg:col-span-3")}>The shop</p>
           <p className="max-w-[65ch] text-[16px] leading-7 text-ink/70 lg:col-span-7">
-            Kestrel Audio is a small hi-fi shop in Portland, Oregon. We keep a
+            Kestrel Audio is a small hi-fi shop in Lyon, France. We keep a
             short catalogue of headphones, speakers, turntables and accessories,
-            and ship from our warehouse to addresses in the United States and
-            Canada. Orders placed before 14:00 Pacific on a weekday leave the
-            same day.
+            and ship from our warehouse to addresses in France and the European
+            Union. Orders placed before 14:00 Central European Time on a weekday
+            leave the same day.
           </p>
         </Container>
       </section>

@@ -50,7 +50,7 @@ describe("payment amount and currency checks", () => {
   it("treats a currency mismatch the same way", async () => {
     const { order } = await createPendingOrder();
     const rawBody = paymentEvent(order, `evt_${randomUUID()}`, {
-      currency: "eur",
+      currency: "usd",
     });
 
     const response = await POST(signedRequest(rawBody));

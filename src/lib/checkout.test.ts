@@ -1,11 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import {
-  cartVersion,
-  computeTotals,
-  parseCheckoutBody,
-  shippingForSubtotal,
-} from "./checkout";
+import { cartVersion, computeTotals, parseCheckoutBody } from "./checkout";
 
 describe("cartVersion", () => {
   it("matches the documented canonical hash for a single line", () => {
@@ -51,17 +46,6 @@ describe("computeTotals", () => {
       shippingCents: 490,
       totalCents: 5_390,
     });
-  });
-
-  it("makes standard shipping free at the threshold", () => {
-    expect(shippingForSubtotal(8_000, "STANDARD")).toBe(0);
-    expect(shippingForSubtotal(7_999, "STANDARD")).toBe(490);
-  });
-
-  it("charges express shipping regardless of subtotal", () => {
-    expect(shippingForSubtotal(0, "EXPRESS")).toBe(0);
-    expect(shippingForSubtotal(1_000, "EXPRESS")).toBe(990);
-    expect(shippingForSubtotal(200_000, "EXPRESS")).toBe(990);
   });
 
   it("multiplies integer cents and never introduces fractions", () => {

@@ -4,16 +4,12 @@ import Link from "next/link";
 import { AddressForm } from "@/app/account/addresses/address-forms";
 import { addAddress } from "@/app/account/addresses/actions";
 import { Breadcrumbs, Container } from "@/components/store/ui";
-import {
-  cartVersion,
-  computeTotals,
-  shippingForSubtotal,
-} from "@/lib/checkout";
+import { cartVersion, computeTotals } from "@/lib/checkout";
 import { db } from "@/lib/db";
 import {
   EXPRESS_SHIPPING_CENTS,
-  FREE_SHIPPING_THRESHOLD_CENTS,
   formatPrice,
+  shippingForSubtotal,
   shippingRuleCopy,
 } from "@/lib/money";
 import { requireUserId } from "@/lib/session";
@@ -170,8 +166,7 @@ export default async function CheckoutPage() {
                     })}
                   </div>
                   <p className="mt-3 text-[13px] leading-5 text-ink/45">
-                    {shippingRuleCopy()} Free shipping applies to standard
-                    delivery over {formatPrice(FREE_SHIPPING_THRESHOLD_CENTS)}.
+                    {shippingRuleCopy()}
                   </p>
                 </form>
               </section>
