@@ -12,8 +12,6 @@
     "start": "next start",
     "e2e": "playwright test",
     "load": "k6 run load/checkout.js",
-    "load:fixture": "node scripts/load-fixture.mjs",
-    "assets": "node scripts/capture-assets.mjs",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
