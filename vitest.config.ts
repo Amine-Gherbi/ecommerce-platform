@@ -24,9 +24,11 @@ export default defineConfig({
     fileParallelism: false,
     coverage: {
       provider: "v8",
-      include: ["src/lib/**/*.ts"],
-      // The client factory has no logic of its own; everything else under
-      // src/lib must stay covered, with a floor of 70%.
+      // Domain logic plus the server actions that are the only write paths a
+      // browser can reach. Both are held to the same floor.
+      include: ["src/lib/**/*.ts", "src/app/**/actions.ts"],
+      // The client factory has no logic of its own; everything else must stay
+      // covered, with a floor of 70%.
       exclude: ["src/lib/db.ts"],
       reporter: ["text", "text-summary"],
       thresholds: {

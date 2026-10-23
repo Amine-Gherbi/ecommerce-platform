@@ -8,8 +8,8 @@ import {
   orderTimeline,
   parseOrderAddress,
 } from "@/lib/account";
-import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/money";
+import { findOrderForCustomer } from "@/lib/orders";
 import { requireUserId } from "@/lib/session";
 import {
   eyebrowClass,
@@ -34,12 +34,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
   const { number } = await params;
   const userId = await requireUserId(`/account/orders/${number}`);
 
-  const order = await db.order.findFirst({
-    where: { number, userId },
-    include: {
-      items: { orderBy: { sku: "asc" } },
-    },
-  });
+  const order = await findOrderForCustomer(number, userId);
 
   if (order === null) {
     notFound();

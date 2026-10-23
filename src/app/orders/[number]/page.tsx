@@ -7,8 +7,8 @@ import {
   orderStatusLabel,
   parseOrderAddress,
 } from "@/lib/account";
-import { db } from "@/lib/db";
 import { formatPrice } from "@/lib/money";
+import { findOrderForCustomer } from "@/lib/orders";
 import { requireUserId } from "@/lib/session";
 import {
   eyebrowClass,
@@ -49,10 +49,7 @@ export default async function OrderConfirmationPage({
   const { number } = await params;
   const userId = await requireUserId(`/orders/${number}`);
 
-  const order = await db.order.findFirst({
-    where: { number, userId },
-    include: { items: { orderBy: { sku: "asc" } } },
-  });
+  const order = await findOrderForCustomer(number, userId);
 
   if (order === null) {
     notFound();
