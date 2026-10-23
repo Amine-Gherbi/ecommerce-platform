@@ -1,55 +1,49 @@
 # ecommerce-platform
 
-**What it is:** a Next.js 15 / PostgreSQL storefront built around money correctness — server-recomputed totals, one order per checkout attempt, reserved stock, idempotent Stripe webhooks, and reconciliation for the webhook that never arrives.
+A Next.js 15 / PostgreSQL 16 storefront. Its hard problem is money correctness under concurrency.
 
-**Hardest problem:** making concurrency and failure paths true, not asserted: 20 concurrent checkouts on stock 5 must create exactly 5 orders, a replayed webhook must be a 200 no-op, and a lost webhook must still settle.
+**Hard problem:** 20 concurrent checkouts against stock 5 must create exactly 5 orders at the server-recomputed total, and no reserved unit may leak (`tests/integration/checkout.oversell.test.ts`).
 
-**Live URL:** none — **local only** (`npm run dev` → `http://localhost:3000`). There is no git remote, so `.github/workflows/ci.yml` has never run; see [docs/PIPELINE.md](docs/PIPELINE.md).
+**Demo credentials:** customer `demo@kestrel.test` / `demo-password-123`; admin `admin@kestrel.test` / `admin-password-123` (seeded with `--seed 42`).
 
-**Demo credentials:** customer `demo@alder.test` / `demo-password-123` · admin `admin@alder.test` / `admin-password-123` (seeded with `--seed 42`).
+**Run** (Node 22 + PostgreSQL 16 on port 5433; copy `.env.example` to `.env` and seed with `npx prisma db seed -- --seed 42` first):
 
-**Proof:** [docs/PROOF.md](docs/PROOF.md) — every claim with the command or test that reproduces it; load method and numbers in [docs/load/checkout.md](docs/load/checkout.md).
-
-**Test status:** `npm run verify` exits 0 locally (lint, strict types, Vitest + coverage, migration drift, 2 Playwright E2E specs). CI is defined but unexecuted, so no green badge is claimed.
+```bash
+npm run dev
+npm run verify
+```
+Numbers: [`docs/load/checkout.md`](docs/load/checkout.md) and [`docs/PROOF.md`](docs/PROOF.md).
 
 ## Stack
 
-Next.js 15 App Router · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Stripe test mode · Vitest · Playwright · k6.
+Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Vitest · Playwright · k6. Payments are simulated: the webhook is signed with HMAC-SHA256 and the PaymentIntent id is `pi_demo_*`; there is no Stripe key and no live URL.
 
-## Run it
+## What is proved
 
-Requires Node 22 and a local PostgreSQL 16 cluster on port 5433 (`shop_dev`, `shop_test`).
-
-```bash
-cp .env.example .env
-npm ci
-npx prisma migrate deploy
-npx prisma db seed -- --seed 42
-npm run dev
-```
-
-`npm run verify` runs the full gate; Playwright needs `npx playwright install chromium` once per machine.
-
-## The correctness claims
-
-| Threat | Where it is proved |
+| Claim | Where |
 | --- | --- |
-| A forged price in the checkout body | `tests/integration/checkout.forged-price.test.ts`, `tests/e2e/checkout.spec.ts` |
-| Concurrent double submit | `tests/integration/checkout.double-submit.test.ts` |
-| Oversell: 20 buyers, stock 5 | `tests/integration/checkout.oversell.test.ts` |
-| Abandoned checkout leaks stock | `tests/integration/stock.sweeper.test.ts` |
-| Webhook replay / out-of-order events | `tests/integration/webhook.replay.test.ts`, `webhook.transitions.test.ts` |
-| Amount mismatch | `tests/integration/checkout.amount-mismatch.test.ts` |
-| Webhook never arrives | `tests/integration/reconcile.dropped-webhook.test.ts` |
-| Card testing / credential stuffing | `tests/integration/security.rate-limit.test.ts` |
+| A forged price in the checkout body is ignored | `tests/integration/checkout.forged-price.test.ts` |
+| Concurrent double submit creates one order and returns it to the loser | `tests/integration/checkout.double-submit.test.ts` |
+| 20 concurrent checkouts on stock 5 create exactly 5 orders | `tests/integration/checkout.oversell.test.ts` |
+| An expired reservation cancels the order and restores stock once | `tests/integration/reservations.sweeper.test.ts` |
+| A replayed webhook is a 200 no-op | `tests/integration/webhook.replay.test.ts` |
+| An illegal transition is a 200 with a log, never a downgrade | `tests/integration/webhook.transitions.test.ts` |
+| An amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID` | `tests/integration/checkout.amount-mismatch.test.ts` |
+| A product edit or archive does not rewrite order history | `tests/integration/admin.products.test.ts` |
+| Browser checkout charges the server total | `tests/e2e/checkout.spec.ts` |
 
-The load report is a real k6 run from this machine (50 VUs, 250 checkouts, 0 % errors); the method, hardware and reduced duration are stated in [docs/load/checkout.md](docs/load/checkout.md).
+## Load measurement
+
+`k6 run load/checkout.js` on 2026-10-23: 50 VUs × 5 iterations = 250 checkouts against `next start`, **p95 4.58 s**, **248/250 created**, 750 HTTP requests. The two failures were `P2028` transaction-start timeouts under the default Prisma pool; the database held 248 orders, 248 open reservations and stock 99,752, so neither failure left a partial row. Method, hardware, raw summary and limits: [`docs/load/checkout.md`](docs/load/checkout.md).
+
+`npm run verify` exited 0 on the same machine: ESLint, `tsc --noEmit`, 33 Vitest files / 181 tests with 92.54 % statement coverage, migration drift clean, 5 Playwright tests. CI is defined in `.github/workflows/ci.yml` but has never run (no git remote); no green badge is claimed.
 
 ## Documentation
 
-- [`docs/PROOF.md`](docs/PROOF.md) — claim → command/test
-- [`docs/PIPELINE.md`](docs/PIPELINE.md) — what CI would run, and that it never has
-- [`docs/INVARIANTS.md`](docs/INVARIANTS.md) — rules that must never break
-- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — sweeper, reconciliation, refunds
-- [`docs/WHY-THIS-INDEX.md`](docs/WHY-THIS-INDEX.md) — measured query plans
+- [`docs/PROOF.md`](docs/PROOF.md) — README claim → test or command
+- [`docs/INVARIANTS.md`](docs/INVARIANTS.md) — each invariant and the test that holds it
+- [`docs/INTERVIEW.md`](docs/INTERVIEW.md) — 20 questions, answered with `file:line`
+- [`docs/DEPLOY.md`](docs/DEPLOY.md) — Node-host build, env, migrations, seed, verify
+- [`docs/OPERATIONS.md`](docs/OPERATIONS.md) — reservation sweeper, webhook replay, what does not exist
+- [`docs/PIPELINE.md`](docs/PIPELINE.md) — the CI definition and why it is unexecuted
 - [`docs/adr/`](docs/adr/) — decisions and their costs

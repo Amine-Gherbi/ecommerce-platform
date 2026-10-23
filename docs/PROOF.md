@@ -1,7 +1,8 @@
 # Proof map
 
-Every claim has a command. Everything here was run on this machine (Windows 11,
-Node 22.23.4, PostgreSQL 16.13) on 2026-10-23 unless labelled otherwise.
+Every README claim maps to a file path and, where a number is quoted, to a
+command that was run in this repository. The dated run is 2026-10-23 on
+Windows 11 Pro 10.0.26200, Node 22.23.4, PostgreSQL 16.13.
 
 ## Gate
 
@@ -11,70 +12,129 @@ npm run verify
 
 `eslint . && tsc --noEmit && vitest run --coverage && prisma migrate diff … --exit-code && playwright test`
 
-Exit 0. CI has never run (no remote); [`docs/PIPELINE.md`](PIPELINE.md) says so.
+**Exit 0**, 2026-10-23 23:05–23:08 local. The abridged transcript is
+[`docs/proof/verify.txt`](proof/verify.txt).
 
-## Invariants → tests
+| Stage | Result in this run |
+| --- | --- |
+| ESLint | exit 0 |
+| `tsc --noEmit` | exit 0 |
+| Vitest | 33 files, 181 tests passed |
+| Coverage | statements 92.54 % (2,608/2,818); branches 81.31 % (544/669); functions 100 % (119/119); lines 92.54 % |
+| `prisma migrate diff --exit-code` | `No difference detected.` |
+| Playwright | 5 tests passed in 2.0 min |
+
+The CI workflow (`.github/workflows/ci.yml`) runs the same command, but it has
+never executed: `git remote -v` prints nothing. No green CI run is claimed.
+
+## README claims
+
+| README claim | Evidence |
+| --- | --- |
+| Next.js 15 / PostgreSQL 16 storefront | `package.json` (`next`, `@prisma/client`); `prisma/schema.prisma:11-14` (`provider = "postgresql"`) |
+| Hard problem: 20 concurrent checkouts on stock 5 → exactly 5 orders | `tests/integration/checkout.oversell.test.ts:16-52`; output in [`docs/proof/concurrency-run.txt`](proof/concurrency-run.txt) |
+| Demo customer `demo@kestrel.test` / `demo-password-123` | `prisma/seed.ts:906-933`; `tests/e2e/helpers.ts:3-6`; corroborated by the E2E checkout test passing |
+| Demo admin `admin@kestrel.test` / `admin-password-123` | same seed rows (`role: "ADMIN"` at `prisma/seed.ts:925-932`); `tests/e2e/admin.spec.ts` |
+| `npm run dev` | `package.json` scripts (`"dev": "next dev -p 3000"`) |
+| `npm run verify` | `package.json` scripts; transcript above |
+| Node 22 + PostgreSQL 16 on port 5433 | `.env.example:3-6`; `package.json` `engines.node >= 22`; `psql --version` → 16.13 |
+| Copy `.env.example` to `.env` | `.env.example:1-20` lists every variable the app reads; `.env` is gitignored (`.gitignore`) |
+| Seed first with `--seed 42` | `npx prisma db seed -- --seed 42` → `seed=42 categories=4 brands=22 products=30 variants=60 …` |
+| Load numbers live in `docs/load/checkout.md` | [`docs/load/checkout.md`](load/checkout.md), produced by `k6 run load/checkout.js` |
+| p95 4.58 s, 248/250, 750 HTTP requests | raw k6 summary in `docs/load/checkout.md`; database counts in the same file |
+| Payments simulated, `pi_demo_*`, no Stripe key | `src/lib/checkout.ts:279`; no `stripe` import under `src/` (`grep -r "from \"stripe\"" src` → no matches) |
+| No live URL | no deployment exists; `git remote -v` is empty; nothing in this repo names a host |
+| CI defined but never run | `.github/workflows/ci.yml:1-7`; `git remote -v` empty |
+
+## The four checkout invariants
+
+The first four are the checkout invariants from `CLAUDE.md`, restated against
+the code that exists after the rebuild.
+
+| # | Invariant | Code | Test |
+| --- | --- | --- | --- |
+| 1 | Money is integer cents; the client cannot supply a price | `src/lib/checkout.ts:86-107` (`computeTotals` rejects non-integers), `:112-131` (parses only `addressId` and `cartVersion`), `:233` (prices from `Variant.priceCents`); `src/app/api/checkout/route.ts:46-50` | `tests/integration/checkout.forged-price.test.ts:19-87` |
+| 2 | `OrderItem` snapshots `sku`, `nameSnapshot`, `unitPriceCents`; product edits never rewrite history | `prisma/schema.prisma:187-200`; `src/lib/checkout.ts:280-287` | `tests/integration/admin.products.test.ts:116-159`, `:161-215` |
+| 3 | One order per `(userId, idempotencyKey)`; a duplicate returns the existing order | `src/lib/checkout.ts:133-135`, `:166-176`, `:304-323`; unique index `prisma/schema.prisma:183`; route maps `duplicate` to 200 at `src/app/api/checkout/route.ts:56-59` | `tests/integration/checkout.double-submit.test.ts:16-55` |
+| 4 | Stock never goes negative; the reservation is written in the same transaction | `src/lib/checkout.ts:169-303`; conditional `UPDATE … WHERE stock >= ${quantity}` at `:235-244`; reservation rows at `:289-295`; DB `CHECK ("stock" >= 0)` at `prisma/migrations/20261023152658_rebuild/migration.sql:281-283` | `tests/integration/checkout.oversell.test.ts:16-52` |
+
+## Webhook behaviours
+
+The route is `src/app/api/webhooks/payments/route.ts`; the domain logic is
+`src/lib/payments-webhook.ts`.
+
+| Behaviour | Code | Test |
+| --- | --- | --- |
+| Replay is a 200 no-op: one `WebhookEvent`, no second state change | event row inserted first at `src/lib/payments-webhook.ts:112-119`; unique `eventId` at `prisma/schema.prisma:218-228`; duplicate returns at `:214-218`; route answers 200 at `src/app/api/webhooks/payments/route.ts:40-41` | `tests/integration/webhook.replay.test.ts:19-61` |
+| Illegal transition logs, answers 200, and never downgrades `PAID` | `src/lib/payments-webhook.ts:161-167` (non-PENDING), `:204-209` (lost compare-and-set) | `tests/integration/webhook.transitions.test.ts:61-81` |
+| Unknown PaymentIntent is recorded and answered 200 | `src/lib/payments-webhook.ts:152-159` | `tests/integration/webhook.transitions.test.ts:44-59` |
+| Amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID`, and returns stock | `src/lib/payments-webhook.ts:169-194`; reservation release at `src/lib/reservations.ts:14-45` | `tests/integration/checkout.amount-mismatch.test.ts:19-66` |
+| Signature is checked against the raw bytes; unsigned/wrong-signed is the only 400 | `src/app/api/webhooks/payments/route.ts:16-30`; HMAC over `${t}.${rawBody}` at `src/lib/webhook-signature.ts:13-21`, constant-time compare at `:63-90` | `tests/integration/webhook.transitions.test.ts:21-42`; `src/lib/webhook-signature.test.ts` |
+| Every classified outcome is 200, never 4xx | `src/lib/payments-webhook.ts:105-220` returns `WebhookResult` for replay, ignored, paid, refund_required and illegal_transition; route answers 200 at `:40-41`. A bad signature is the only 400 (`:28-30`); an unhandled database exception becomes a 500, which is deliberate. | replay, transitions and mismatch tests above |
+
+## Reservation lifecycle
+
+| Behaviour | Code | Test |
+| --- | --- | --- |
+| The sweeper cancels an expired `PENDING` order and restores stock exactly once | `src/lib/reservations.ts:51-90`; `POST /api/internal/sweep-reservations` at `src/app/api/internal/sweep-reservations/route.ts:9-24` | `tests/integration/reservations.sweeper.test.ts:25-77` |
+| A `PAID` order keeps its stock even with a stale reservation | `src/lib/reservations.ts:59` (`order: { status: "PENDING" }`), `:71-75` (compare-and-set) | `tests/integration/reservations.sweeper.test.ts:79-115` |
+| Releasing is idempotent: `releasedAt IS NULL` decides which caller restores units | `src/lib/reservations.ts:27-43` | `tests/integration/reservations.sweeper.test.ts:64-77`; `tests/integration/admin.transitions.test.ts:103-147` |
+
+## Other backed claims
 
 | Claim | Test |
 | --- | --- |
-| A forged price cannot change the charge | `tests/integration/checkout.forged-price.test.ts` |
-| One order per `(userId, idempotencyKey)` under double submit | `tests/integration/checkout.double-submit.test.ts` |
-| 20 concurrent checkouts on stock 5 create exactly 5 orders | `tests/integration/checkout.oversell.test.ts` |
-| Expired reservations release stock and cancel the order | `tests/integration/reservations.sweeper.test.ts` |
-| A replayed webhook is a 200 no-op | `tests/integration/webhook.replay.test.ts` |
-| Illegal transitions log and return 200 | `tests/integration/webhook.transitions.test.ts` |
-| Amount mismatch becomes `REFUND_REQUIRED`, never `PAID` | `tests/integration/checkout.amount-mismatch.test.ts` |
-| A dropped webhook is settled by reconciliation | `tests/integration/reconcile.dropped-webhook.test.ts` |
-| Rate limiting returns 429 | `tests/integration/security.rate-limit.test.ts` |
-| Browser happy path + forged-price path | `tests/e2e/checkout.spec.ts` |
+| A customer cannot read another customer's order | `tests/integration/orders.isolation.test.ts:18-71` |
+| Sign-in is rate limited per email + IP after five failures | `src/lib/rate-limit.ts:8-44`; `tests/integration/signin-actions.test.ts:142-220` |
+| An anonymous cart merges into the account once, keeping the higher quantity | `tests/integration/cart.merge.test.ts:52-166` |
+| Address mutations are scoped to the owner | `tests/integration/addresses-actions.test.ts` |
+| Admin order moves are exactly `PENDING→CANCELLED`, `PAID→FULFILLED`, `REFUND_REQUIRED→REFUNDED` | `src/lib/admin-orders.ts:12-16`; `tests/integration/admin.transitions.test.ts` |
+| Admin archive sets `Product.status = "ARCHIVED"` and leaves order rows untouched | `src/lib/admin-products.ts:427-467`; `tests/integration/admin.products.test.ts:161-215` |
 
-## Checkout round (P2-R4)
-
-Run on 2026-10-23 against a production server (`next start -p 3200`) pointed at
-`shop_test_checkout`. The scripts take `DATABASE_URL` from the environment, so it
-must name the same database the server uses.
-
-```bash
-node scripts/checkout-double-submit.mjs
-node scripts/checkout-oversell.mjs
-node scripts/webhook-proof.mjs
-npx vitest run   # with TEST_DATABASE_URL=…/shop_test_checkout
-```
-
-Observed:
-
-- Forged `totalCents: 1` ignored: order `KST-2610-DCAB369A` stored
-  `2490 + 490 = 2980`, and psql recomputed the same subtotal from
-  `Variant.priceCents`.
-- Two parallel `curl` submits of one cart version: HTTP 201 + 200, the same
-  order number, and `count(*) WHERE idempotencyKey = sha256(cart.id:cartVersion)`
-  = 1.
-- 20 concurrent HTTP checkouts on stock 5: `5×201`, `15×409 OUT_OF_STOCK`,
-  `stock=0`, 5 orders, 5 open reservations.
-- Correct signed webhook → `PAID`; replay → 200 `duplicate` with one
-  `WebhookEvent` row; amount +1 → `REFUND_REQUIRED`, `paidAt` null, stock
-  restored; unsigned and wrongly signed → 400 with no event row.
-- Sweeper test: an expired reservation cancels the order and restores stock
-  once; a `PAID` order with a stale reservation is left alone.
-- `npx tsc --noEmit`, `npx eslint .`, `npm run build`: exit 0.
-- `vitest run`: 12 files, 41 tests passed.
+`CLAUDE.md` describes the archive flag as `archivedAt`. The rebuilt schema has
+no such column: the archive state is `ProductStatus.ARCHIVED` on
+`Product.status` (`prisma/schema.prisma:21-25`, `:88-106`). The test above is
+the behaviour; the column name is not.
 
 ## Measurements
 
-- **Concurrency:** `npx vitest run tests/integration/checkout.oversell.test.ts --reporter=verbose`
-  → `20 concurrent checkouts on stock 5 → 5×201, 15×409, stock=0, openReservations=5`.
-  Transcript: [`docs/proof/concurrency-run.txt`](proof/concurrency-run.txt).
-- **Checkout load:** `node scripts/load-fixture.mjs && k6 run load/checkout.js`
-  → 50 VUs, 250 checkouts, 0 % errors, p50 1.96 s, p95 2.66 s, p99 2.88 s.
-  Method, hardware, reduced duration and limits: [`docs/load/checkout.md`](load/checkout.md).
+### Concurrency
 
-Test counts are not metrics and are deliberately not quoted.
+```bash
+npx vitest run tests/integration/checkout.oversell.test.ts --reporter=verbose
+```
 
-## Assets
+2026-10-23 output:
 
-`npm run assets` writes `P:/portfolio/_shared/assets/ecommerce-platform/`:
-four 2880×1800 WebP shots — hero = product page photo and buy box, shot-01 =
-category grid with filters, shot-02 = cart table, shot-03 = admin orders — plus
-`manifest.json` with `demoLogin`, `previewCommand` and `proof{}`. The database
-is reseeded `--seed 42` before capture. Capture command, viewport and file sizes:
-[`docs/proof/screenshots.txt`](proof/screenshots.txt).
+```text
+[proof] 20 concurrent checkouts on stock 5 → 5×201, 15×409, stock=0, openReservations=5
+Test Files  1 passed (1)
+     Tests  1 passed (1)
+```
+
+Transcript: [`docs/proof/concurrency-run.txt`](proof/concurrency-run.txt).
+
+### Checkout load
+
+```bash
+node scripts/load-fixture.mjs
+k6 run load/checkout.js
+```
+
+2026-10-23, 50 VUs × 5 iterations, production `next start`: 250 checkout
+requests, 750 HTTP requests, p95 **4.58 s**, 248 orders created, 2 `P2028`
+transaction-start timeouts. Method, hardware, raw summary and the database
+corroboration (248 orders, 248 open reservations, stock 99,752) are in
+[`docs/load/checkout.md`](load/checkout.md).
+
+Test counts and coverage are gate results, not performance claims.
+
+## Not claimed
+
+- **No reconciliation job.** There is no `/api/jobs/reconcile` route and no
+  code that polls a payment provider for a webhook that never arrives. The only
+  expiry mechanism is the reservation sweeper, which cancels an unpaid
+  `PENDING` order after 30 minutes.
+- **No live Stripe.** No `stripe` import exists under `src/`; the PaymentIntent
+  id is generated locally as `pi_demo_*` (`src/lib/checkout.ts:279`).
+- **No deployment and no CI run.** See the Gate section.
