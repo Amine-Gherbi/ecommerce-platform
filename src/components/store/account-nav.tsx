@@ -31,7 +31,7 @@ export async function AccountNav() {
     <details className="relative">
       <summary
         className={cn(
-          "flex cursor-pointer list-none items-center gap-1.5 text-[13px] text-ink transition-colors hover:text-accent",
+          "flex cursor-pointer list-none items-center gap-1.5 text-[13px] text-ink transition-colors hover:text-ink/65",
           focusRing,
         )}
       >

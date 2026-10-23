@@ -256,7 +256,7 @@ export default async function CheckoutPage() {
 
                 <div className="mt-5 flex items-baseline justify-between gap-4 border-t border-rule pt-5">
                   <span className="text-[14px] text-ink">Total</span>
-                  <span className="text-[20px] leading-7 tabular-nums text-accent">
+                  <span className="text-[20px] leading-7 tabular-nums text-ink">
                     {formatPrice(totals.totalCents)}
                   </span>
                 </div>

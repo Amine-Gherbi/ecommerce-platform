@@ -131,7 +131,7 @@ export default async function OrderDetailPage({ params }: OrderPageProps) {
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <dt className="text-ink">Total</dt>
-              <dd className="text-[18px] tabular-nums text-accent">
+              <dd className="text-[18px] tabular-nums text-ink">
                 {formatPrice(order.totalCents)}
               </dd>
             </div>

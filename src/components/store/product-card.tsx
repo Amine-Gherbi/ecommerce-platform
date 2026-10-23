@@ -30,7 +30,7 @@ export function ProductCard({ product }: { product: ProductCardModel }) {
           <h3 className="text-[14px] leading-5 text-ink transition-colors group-hover:text-ink/75">
             {product.title}
           </h3>
-          <p className="text-[14px] leading-5 text-accent">
+          <p className="text-[14px] leading-5 tabular-nums text-ink">
             {product.pricePrefix}
             {product.price}
           </p>

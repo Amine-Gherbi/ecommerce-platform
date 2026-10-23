@@ -57,9 +57,12 @@ export function CartCount() {
     <Link
       href="/cart"
       aria-label={`Cart, ${count} ${count === 1 ? "item" : "items"}`}
-      className="text-[13px] text-ink/70 transition-colors hover:text-ink"
+      className="inline-flex h-9 items-center gap-2 border border-rule px-3 text-[13px] text-ink transition-colors hover:border-ink"
     >
-      Cart <span className="tabular-nums">({count})</span>
+      Cart
+      <span className="min-w-4 text-center text-[12px] tabular-nums text-ink/55">
+        {count}
+      </span>
     </Link>
   );
 }

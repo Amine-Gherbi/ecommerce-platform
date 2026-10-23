@@ -100,7 +100,7 @@ export default async function AccountPage() {
                       <span className="text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
                         {orderStatusLabel(order.status)}
                       </span>
-                      <span className="w-24 text-right text-[14px] leading-5 text-accent">
+                      <span className="w-24 text-right text-[14px] leading-5 tabular-nums text-ink">
                         {formatPrice(order.totalCents)}
                       </span>
                     </span>
