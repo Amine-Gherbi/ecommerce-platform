@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { getNavCategories } from "@/lib/catalog";
 import { focusRing } from "@/lib/styles";
 
+import { AccountNav, AccountNavFallback } from "./account-nav";
 import { CartCount } from "./cart-count";
 import { Container } from "./ui";
 
@@ -92,12 +94,9 @@ export async function SiteHeader() {
             <div className="hidden w-52 md:block xl:w-64">
               <SearchForm />
             </div>
-            <Link
-              href="/signin"
-              className="text-[13px] text-ink/70 transition-colors hover:text-ink"
-            >
-              Account
-            </Link>
+            <Suspense fallback={<AccountNavFallback />}>
+              <AccountNav />
+            </Suspense>
             <CartCount />
           </div>
         </div>

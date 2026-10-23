@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 
-import { getCartIdForCookie, getOrCreateCart } from "@/lib/cart";
+import { getCurrentCartId, getOrCreateCart } from "@/lib/cart";
 import { db } from "@/lib/db";
 import { MAX_CART_QUANTITY } from "@/lib/money";
 
@@ -96,7 +96,7 @@ export async function setCartItemQuantity(
   }
 
   try {
-    const cartId = await getCartIdForCookie();
+    const cartId = await getCurrentCartId();
     if (cartId === null) {
       return { ok: false, message: "Your cart is empty." };
     }
@@ -146,7 +146,7 @@ export async function removeCartItem(
   }
 
   try {
-    const cartId = await getCartIdForCookie();
+    const cartId = await getCurrentCartId();
     if (cartId === null) {
       return { ok: false, message: "Your cart is empty." };
     }
