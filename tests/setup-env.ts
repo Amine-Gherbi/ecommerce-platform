@@ -4,3 +4,6 @@
 process.env.DATABASE_URL =
   process.env.TEST_DATABASE_URL ??
   "postgresql://postgres@localhost:5433/shop_test?schema=public";
+
+// Deterministic webhook secret so integration tests can sign their own calls.
+process.env.PAYMENTS_WEBHOOK_SECRET = "test-payments-webhook-secret";

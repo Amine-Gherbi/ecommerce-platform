@@ -64,6 +64,8 @@ function parseAddress(formData: FormData): ParsedAddress {
 function revalidateAddresses(): void {
   revalidatePath("/account/addresses");
   revalidatePath("/account");
+  // The checkout page offers the same address book.
+  revalidatePath("/checkout");
 }
 
 export async function addAddress(
