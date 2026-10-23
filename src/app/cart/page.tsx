@@ -254,7 +254,7 @@ export default async function CartPage() {
                 </Link>
 
                 <p className="mt-4 text-[13px] leading-5 text-ink/50">
-                  Totals are recalculated on the server at checkout.
+                  The final total is confirmed when you place your order.
                 </p>
               </div>
             </aside>

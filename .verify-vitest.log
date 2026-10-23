@@ -1,0 +1,501 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mP:/portfolio/ecommerce-platform[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m tests/integration/catalog.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 6598[2mms[22m[39m
+   [33m[2m✓[22m[39m getNavCategories[2m > [22mlists categories in their configured order [33m 722[2mms[22m[39m
+   [33m[2m✓[22m[39m getHomePageData[2m > [22mprefers the hero product, counts active products and limits new arrivals [33m 598[2mms[22m[39m
+   [33m[2m✓[22m[39m getHomePageData[2m > [22mfalls back to the newest product and an empty state [33m 565[2mms[22m[39m
+   [33m[2m✓[22m[39m getCategoryPageData[2m > [22mreturns null for an unknown category [33m 513[2mms[22m[39m
+   [33m[2m✓[22m[39m getCategoryPageData[2m > [22mfilters by brand, price band and stock and paginates the result [33m 626[2mms[22m[39m
+   [33m[2m✓[22m[39m getCategoryPageData[2m > [22msorts by price both ways and by name, breaking ties by title [33m 605[2mms[22m[39m
+   [33m[2m✓[22m[39m getCategoryPageData[2m > [22mshows a second page when the category exceeds the page size [33m 642[2mms[22m[39m
+   [33m[2m✓[22m[39m getSearchPageData[2m > [22mreturns an empty result for a blank query without hitting the catalogue [33m 365[2mms[22m[39m
+   [33m[2m✓[22m[39m getSearchPageData[2m > [22mmatches title, description and brand, then serialises the query [33m 467[2mms[22m[39m
+   [33m[2m✓[22m[39m getProductPageData[2m > [22mreturns null for an unknown or variant-less product [33m 524[2mms[22m[39m
+   [33m[2m✓[22m[39m getProductPageData[2m > [22mrenders the selected variant, sorted string specs and related products [33m 512[2mms[22m[39m
+   [33m[2m✓[22m[39m getProductPageData[2m > [22mtreats non-object specs as no specs [33m 455[2mms[22m[39m
+ [32m✓[39m tests/integration/cart-actions.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 4776[2mms[22m[39m
+   [33m[2m✓[22m[39m addItemToCart[2m > [22mrejects a malformed variant id before touching the database [33m 485[2mms[22m[39m
+   [33m[2m✓[22m[39m addItemToCart[2m > [22mrejects quantities that are not positive whole units [33m 443[2mms[22m[39m
+   [33m[2m✓[22m[39m addItemToCart[2m > [22mrefuses an unknown, archived or sold-out variant [33m 530[2mms[22m[39m
+   [33m[2m✓[22m[39m addItemToCart[2m > [22madds stock-bounded quantities and caps at the cart maximum [33m 515[2mms[22m[39m
+   [33m[2m✓[22m[39m setCartItemQuantity[2m > [22mrejects malformed identifiers and quantities [33m 375[2mms[22m[39m
+   [33m[2m✓[22m[39m setCartItemQuantity[2m > [22mrefuses when the visitor has no cart or the line is not theirs [33m 387[2mms[22m[39m
+   [33m[2m✓[22m[39m setCartItemQuantity[2m > [22mremoves a line at quantity zero [33m 424[2mms[22m[39m
+   [33m[2m✓[22m[39m setCartItemQuantity[2m > [22mrefuses to sell a sold-out variant and caps at available stock [33m 458[2mms[22m[39m
+   [33m[2m✓[22m[39m removeCartItem[2m > [22mrejects malformed ids [33m 360[2mms[22m[39m
+   [33m[2m✓[22m[39m removeCartItem[2m > [22mrefuses when there is no cart [33m 368[2mms[22m[39m
+   [33m[2m✓[22m[39m removeCartItem[2m > [22mremoves only a line belonging to the visitor's cart [33m 426[2mms[22m[39m
+ [32m✓[39m tests/integration/addresses-actions.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 4139[2mms[22m[39m
+   [33m[2m✓[22m[39m addAddress[2m > [22mrequires the fields an address cannot be shipped without [33m 487[2mms[22m[39m
+   [33m[2m✓[22m[39m addAddress[2m > [22mmakes the first address the default even without the checkbox [33m 411[2mms[22m[39m
+   [33m[2m✓[22m[39m addAddress[2m > [22mmoves the default when a later address asks for it [33m 367[2mms[22m[39m
+   [33m[2m✓[22m[39m updateAddress[2m > [22mreports invalid input and unknown addresses [33m 349[2mms[22m[39m
+   [33m[2m✓[22m[39m updateAddress[2m > [22mupdates fields, optionally promoting the address to default [33m 419[2mms[22m[39m
+   [33m[2m✓[22m[39m updateAddress[2m > [22mkeeps the existing default when the checkbox is absent [33m 362[2mms[22m[39m
+   [33m[2m✓[22m[39m setDefaultAddress[2m > [22mmoves the default to one of the customer's addresses [33m 373[2mms[22m[39m
+   [33m[2m✓[22m[39m setDefaultAddress[2m > [22mis a no-op for an address that is not the customer's [33m 334[2mms[22m[39m
+   [33m[2m✓[22m[39m deleteAddress[2m > [22mreports unknown addresses and refuses to delete the only one [33m 343[2mms[22m[39m
+   [33m[2m✓[22m[39m deleteAddress[2m > [22mdeletes a non-default address and leaves the default in place [33m 341[2mms[22m[39m
+   [33m[2m✓[22m[39m deleteAddress[2m > [22mpromotes a fallback when the default address is deleted [33m 348[2mms[22m[39m
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mturns a thrown credentials error into the same customer-facing message
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:107:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mrate limits after five failures for the same email and IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:144:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mrate limits after five failures for the same email and IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:144:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mrate limits after five failures for the same email and IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:144:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mrate limits after five failures for the same email and IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:144:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mrate limits after five failures for the same email and IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:144:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mkeeps buckets separate per client IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:167:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mkeeps buckets separate per client IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:167:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mkeeps buckets separate per client IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:167:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mkeeps buckets separate per client IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:167:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mkeeps buckets separate per client IP
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:167:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:186:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:186:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:186:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:186:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:186:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:204:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:204:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:204:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:204:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction failures[2m > [22m[2mfalls back to x-real-ip and then to a local bucket
+[22m[39msignInAction failed Error: CredentialsSignin
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:204:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+[90mstderr[2m | tests/integration/signin-actions.test.ts[2m > [22m[2msignInAction success[2m > [22m[2mstill signs the customer in when the cart merge fails
+[22m[39mcart merge after sign-in failed Error: cookie store unavailable
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signin-actions.test.ts:270:35
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:20
+
+ [32m✓[39m tests/integration/signin-actions.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 3988[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction validation[2m > [22mrequires both fields before signing in [33m 411[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mturns a thrown credentials error into the same customer-facing message [33m 365[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mtreats Auth.js's error URL as a failed sign-in [33m 349[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mfails closed when the signed-in email has no account row [33m 403[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mrate limits after five failures for the same email and IP [33m 342[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mkeeps buckets separate per client IP [33m 363[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction failures[2m > [22mfalls back to x-real-ip and then to a local bucket [33m 373[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction success[2m > [22mmerges the anonymous cart, clears the limiter and sends a customer to the account [33m 343[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction success[2m > [22msends an admin to the admin console [33m 347[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction success[2m > [22mhonours an internal next path but never an external one [33m 353[2mms[22m[39m
+   [33m[2m✓[22m[39m signInAction success[2m > [22mstill signs the customer in when the cart merge fails [33m 335[2mms[22m[39m
+ [32m✓[39m tests/integration/cart.page.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 3513[2mms[22m[39m
+   [33m[2m✓[22m[39m empty carts[2m > [22mrenders a zeroed summary when there is no cart [33m 430[2mms[22m[39m
+   [33m[2m✓[22m[39m empty carts[2m > [22mcreates one anonymous cart and reuses it through the cookie [33m 434[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart rendering[2m > [22mreturns lines and server totals, including express shipping [33m 512[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart rendering[2m > [22mmakes standard shipping free at the threshold [33m 444[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart rendering[2m > [22mreports a sold-out line and caps quantity at the stock [33m 443[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart rendering[2m > [22mdoes not invent a cart for an unknown cookie [33m 372[2mms[22m[39m
+   [33m[2m✓[22m[39m signed-in cart rendering[2m > [22mreads the user's cart rather than any cookie [33m 450[2mms[22m[39m
+   [33m[2m✓[22m[39m signed-in cart rendering[2m > [22mcreates the signed-in cart on first add [33m 423[2mms[22m[39m
+[90mstdout[2m | tests/integration/signup-actions.test.ts[2m > [22m[2msignUpAction account creation[2m > [22m[2mrefuses a duplicate email and says how to recover
+[22m[39mprisma:error 
+Invalid `db.user.create()` invocation in
+P:\portfolio\ecommerce-platform\src\app\signup\actions.ts:43:32
+
+  40 
+  41 let userId: string;
+  42 try {
+→ 43   const user = await db.user.create(
+Unique constraint failed on the fields: (`email`)
+
+[90mstderr[2m | tests/integration/signup-actions.test.ts[2m > [22m[2msignUpAction account creation[2m > [22m[2mreports a signed-up account when automatic sign-in throws
+[22m[39msign-in after sign-up failed Error: auth unavailable
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signup-actions.test.ts:136:36
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | tests/integration/signup-actions.test.ts[2m > [22m[2msignUpAction account creation[2m > [22m[2mstill completes sign-up when the cart merge fails
+[22m[39mcart merge after sign-up failed Error: cookie store unavailable
+    at [90mP:\portfolio\ecommerce-platform\[39mtests\integration\signup-actions.test.ts:148:35
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at [90mfile:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///P:/portfolio/ecommerce-platform/[39mnode_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1787:3[90m)[39m
+
+ [32m✓[39m tests/integration/signup-actions.test.ts [2m([22m[2m6 tests[22m[2m)[22m[33m 5820[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction validation[2m > [22mrejects an empty name, bad email, short or mismatched password [33m 491[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction account creation[2m > [22mrefuses a duplicate email and says how to recover [33m 550[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction account creation[2m > [22mcreates a customer, signs in, merges the cart and lands on the account page [33m 400[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction account creation[2m > [22mreports a signed-up account when automatic sign-in fails [33m 394[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction account creation[2m > [22mreports a signed-up account when automatic sign-in throws [33m 381[2mms[22m[39m
+   [33m[2m✓[22m[39m signUpAction account creation[2m > [22mstill completes sign-up when the cart merge fails [33m 3600[2mms[22m[39m
+ [32m✓[39m tests/integration/admin.products.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2511[2mms[22m[39m
+   [33m[2m✓[22m[39m admin product mutations[2m > [22mwrites one audit row per section save [33m 751[2mms[22m[39m
+   [33m[2m✓[22m[39m admin product mutations[2m > [22mchanges the variant price without changing an existing order [33m 556[2mms[22m[39m
+   [33m[2m✓[22m[39m admin product mutations[2m > [22marchives without touching the order and restores on request [33m 567[2mms[22m[39m
+   [33m[2m✓[22m[39m admin product mutations[2m > [22mreorders images and records the new order [33m 632[2mms[22m[39m
+ [32m✓[39m tests/integration/admin.transitions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 2313[2mms[22m[39m
+   [33m[2m✓[22m[39m admin order transitions[2m > [22mpersists PAID to FULFILLED and writes one audit row [33m 685[2mms[22m[39m
+   [33m[2m✓[22m[39m admin order transitions[2m > [22mrefuses FULFILLED to PAID with a message and no audit row [33m 538[2mms[22m[39m
+   [33m[2m✓[22m[39m admin order transitions[2m > [22mcancels a pending order, restores stock and releases its reservation [33m 560[2mms[22m[39m
+   [33m[2m✓[22m[39m admin order transitions[2m > [22mmoves REFUND_REQUIRED to REFUNDED and records it [33m 526[2mms[22m[39m
+ [32m✓[39m tests/integration/reservations.sweeper.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1770[2mms[22m[39m
+   [33m[2m✓[22m[39m reservation sweeper[2m > [22mcancels an expired PENDING order and restores the reserved stock once [33m 712[2mms[22m[39m
+   [33m[2m✓[22m[39m reservation sweeper[2m > [22mleaves a PAID order and its stock alone even if the reservation is stale [33m 538[2mms[22m[39m
+   [33m[2m✓[22m[39m reservation sweeper[2m > [22mdoes not touch a reservation that has not expired [33m 516[2mms[22m[39m
+ [32m✓[39m tests/integration/checkout-actions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1638[2mms[22m[39m
+   [33m[2m✓[22m[39m chooseDeliveryMethod[2m > [22msends anonymous visitors to sign in for checkout [33m 447[2mms[22m[39m
+   [33m[2m✓[22m[39m chooseDeliveryMethod[2m > [22mignores a delivery method the server does not offer [33m 364[2mms[22m[39m
+   [33m[2m✓[22m[39m chooseDeliveryMethod[2m > [22mdoes nothing when the signed-in customer has no cart [33m 425[2mms[22m[39m
+   [33m[2m✓[22m[39m chooseDeliveryMethod[2m > [22mstores the server-side delivery choice on the cart [33m 398[2mms[22m[39m
+[90mstderr[2m | tests/integration/webhook.transitions.test.ts[2m > [22m[2mwebhook signature and transitions[2m > [22m[2mrecords an event for an unknown payment intent and answers 200
+[22m[39m[payments-webhook] ignored event=evt_25f0d562-761c-4189-bdea-042953f1c9ef paymentIntent=pi_demo_e2127c5b-85fc-4404-90bd-6224f3f3271d
+
+[90mstderr[2m | tests/integration/webhook.transitions.test.ts[2m > [22m[2mwebhook signature and transitions[2m > [22m[2mlogs an illegal transition, returns 200 and never downgrades PAID
+[22m[39m[payments-webhook] illegal transition event=evt_60ec4c26-0ca6-4cd2-adca-ac3f3c68e5c8 order=5006230d-dda0-43b5-9466-7444d7607a08 status=PAID
+
+ [32m✓[39m tests/integration/webhook.transitions.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1449[2mms[22m[39m
+   [33m[2m✓[22m[39m webhook signature and transitions[2m > [22mrejects an unsigned or wrongly signed body with 400 and writes no event [33m 457[2mms[22m[39m
+   [33m[2m✓[22m[39m webhook signature and transitions[2m > [22mrecords an event for an unknown payment intent and answers 200 [33m 447[2mms[22m[39m
+   [33m[2m✓[22m[39m webhook signature and transitions[2m > [22mlogs an illegal transition, returns 200 and never downgrades PAID [33m 540[2mms[22m[39m
+ [32m✓[39m tests/integration/cart.merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[33m 1552[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart merge at sign-in[2m > [22mmerges once, keeps the higher quantity and deletes the anonymous cart [33m 703[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart merge at sign-in[2m > [22mkeeps the account quantity when it is already the higher one [33m 441[2mms[22m[39m
+   [33m[2m✓[22m[39m anonymous cart merge at sign-in[2m > [22mdoes nothing when the browser has no anonymous cart cookie [33m 404[2mms[22m[39m
+[90mstderr[2m | tests/integration/checkout.amount-mismatch.test.ts[2m > [22m[2mpayment amount and currency checks[2m > [22m[2msends a mismatched amount to REFUND_REQUIRED, never PAID, and returns stock
+[22m[39m[payments-webhook] amount mismatch event=evt_a14b5ed1-9b02-4efb-9f33-d7b1a6b63164 order=d7abf1ea-780f-498a-b212-9be7f3d7a4c2 expected=2490 received=2491 currency=eur
+
+[90mstderr[2m | tests/integration/checkout.amount-mismatch.test.ts[2m > [22m[2mpayment amount and currency checks[2m > [22m[2mtreats a currency mismatch the same way
+[22m[39m[payments-webhook] amount mismatch event=evt_cf0750e5-0f35-47ee-9df0-9ab8fafd8dec order=9c606072-01da-4a03-8bfc-d8415de4bd5d expected=2490 received=2490 currency=usd
+
+ [32m✓[39m tests/integration/checkout.amount-mismatch.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1291[2mms[22m[39m
+   [33m[2m✓[22m[39m payment amount and currency checks[2m > [22msends a mismatched amount to REFUND_REQUIRED, never PAID, and returns stock [33m 740[2mms[22m[39m
+   [33m[2m✓[22m[39m payment amount and currency checks[2m > [22mtreats a currency mismatch the same way [33m 546[2mms[22m[39m
+ [32m✓[39m tests/integration/orders.isolation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1216[2mms[22m[39m
+   [33m[2m✓[22m[39m customer order isolation[2m > [22mreturns the order to its owner and null to another signed-in customer [33m 732[2mms[22m[39m
+   [33m[2m✓[22m[39m customer order isolation[2m > [22mdoes not reveal an order to an unsigned customer id [33m 480[2mms[22m[39m
+ [32m✓[39m tests/integration/checkout.forged-price.test.ts [2m([22m[2m2 tests[22m[2m)[22m[33m 1117[2mms[22m[39m
+   [33m[2m✓[22m[39m client-supplied prices[2m > [22mignores totalCents in the body and prices from Variant.priceCents [33m 637[2mms[22m[39m
+   [33m[2m✓[22m[39m client-supplied prices[2m > [22mre-prices after a price change instead of trusting the preview [33m 475[2mms[22m[39m
+[90mstdout[2m | tests/integration/checkout.oversell.test.ts[2m > [22m[2m20 concurrent checkouts against stock 5[2m > [22m[2maccepts exactly five orders, leaves stock at zero and five open reservations
+[22m[39m[proof] 20 concurrent checkouts on stock 5 → 5×201, 15×409, stock=0, openReservations=5
+
+ [32m✓[39m tests/integration/checkout.oversell.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 1086[2mms[22m[39m
+   [33m[2m✓[22m[39m 20 concurrent checkouts against stock 5[2m > [22maccepts exactly five orders, leaves stock at zero and five open reservations [33m 1082[2mms[22m[39m
+[90mstdout[2m | tests/integration/webhook.replay.test.ts[2m > [22m[2mpayment webhook replay[2m > [22m[2mmoves PENDING to PAID, then answers the same event with 200 and one event row
+[22m[39mprisma:error 
+Invalid `tx.webhookEvent.create()` invocation in
+P:\portfolio\ecommerce-platform\src\lib\payments-webhook.ts:112:29
+
+  109 return await db.$transaction(async (tx): Promise<WebhookResult> => {
+  110   // The unique eventId is the replay arbiter. Insert first so a redelivery
+  111   // rolls back before any side effect.
+→ 112   await tx.webhookEvent.create(
+Unique constraint failed on the fields: (`eventId`)
+
+[90mstderr[2m | tests/integration/webhook.replay.test.ts[2m > [22m[2mpayment webhook replay[2m > [22m[2mmoves PENDING to PAID, then answers the same event with 200 and one event row
+[22m[39m[payments-webhook] duplicate event=evt_552e24be-efff-47f7-b3f5-5b1f7738b1a6
+
+ [32m✓[39m tests/integration/webhook.replay.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 803[2mms[22m[39m
+   [33m[2m✓[22m[39m payment webhook replay[2m > [22mmoves PENDING to PAID, then answers the same event with 200 and one event row [33m 799[2mms[22m[39m
+[90mstdout[2m | tests/integration/checkout.double-submit.test.ts[2m > [22m[2mdouble submit of one cart version[2m > [22m[2mcreates one order and answers the replay with that same order
+[22m[39mprisma:error 
+Invalid `tx.order.create()` invocation in
+P:\portfolio\ecommerce-platform\src\lib\checkout.ts:259:36
+
+  256 
+  257 const orderId = randomUUID();
+  258 
+→ 259 const order = await tx.order.create(
+Unique constraint failed on the fields: (`userId`,`idempotencyKey`)
+
+ [32m✓[39m tests/integration/checkout.double-submit.test.ts [2m([22m[2m1 test[22m[2m)[22m[33m 868[2mms[22m[39m
+   [33m[2m✓[22m[39m double submit of one cart version[2m > [22mcreates one order and answers the replay with that same order [33m 865[2mms[22m[39m
+ [32m✓[39m src/lib/account.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m✓[39m tests/integration/admin-actions.test.ts [2m([22m[2m18 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m✓[39m src/lib/styles.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 25[2mms[22m[39m
+ [32m✓[39m src/lib/admin.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m✓[39m src/lib/session.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m✓[39m src/lib/credits.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m✓[39m src/lib/catalog-shared.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/checkout.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m src/lib/admin-orders.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m✓[39m tests/integration/account-actions.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/webhook-signature.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m✓[39m src/lib/money.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/lib/rate-limit.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m✓[39m src/lib/auth-redirect.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/lib/cart-merge.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m33 passed[39m[22m[90m (33)[39m
+[2m      Tests [22m [1m[32m181 passed[39m[22m[90m (181)[39m
+[2m   Start at [22m 23:29:05
+[2m   Duration [22m 73.88s[2m (transform 1.02s, setup 173ms, collect 6.47s, tests 46.70s, environment 19ms, prepare 7.60s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   92.54 |    81.31 |     100 |   92.54 |                   
+ app/account       |     100 |      100 |     100 |     100 |                   
+  actions.ts       |     100 |      100 |     100 |     100 |                   
+ ...ount/addresses |   95.13 |    93.47 |     100 |   95.13 |                   
+  actions.ts       |   95.13 |    93.47 |     100 |   95.13 | ...47-149,224-226 
+ ...dmin/inventory |     100 |    66.66 |     100 |     100 |                   
+  actions.ts       |     100 |    66.66 |     100 |     100 | 15-16             
+ app/admin/orders  |     100 |    66.66 |     100 |     100 |                   
+  actions.ts       |     100 |    66.66 |     100 |     100 | 15-16             
+ ...admin/products |   96.42 |       75 |     100 |   96.42 |                   
+  actions.ts       |   96.42 |       75 |     100 |   96.42 | 68-69,86-87       
+ app/cart          |   91.91 |    89.18 |     100 |   91.91 |                   
+  actions.ts       |   91.91 |    89.18 |     100 |   91.91 | ...36-138,161-163 
+ app/checkout      |     100 |     87.5 |     100 |     100 |                   
+  actions.ts       |     100 |     87.5 |     100 |     100 | 13                
+ app/signin        |     100 |    87.87 |     100 |     100 |                   
+  actions.ts       |     100 |    87.87 |     100 |     100 | 28,37-40,64       
+ app/signup        |   96.34 |    78.26 |     100 |   96.34 |                   
+  actions.ts       |   96.34 |    78.26 |     100 |   96.34 | 65-67             
+ lib               |    91.5 |    79.91 |     100 |    91.5 |                   
+  account.ts       |     100 |      100 |     100 |     100 |                   
+  admin-orders.ts  |   81.91 |    73.33 |     100 |   81.91 | ...,78-79,101-107 
+  ...n-products.ts |   78.48 |    43.15 |     100 |   78.48 | ...97-498,501-502 
+  admin.ts         |     100 |      100 |     100 |     100 |                   
+  audit.ts         |     100 |      100 |     100 |     100 |                   
+  auth-redirect.ts |      80 |       75 |     100 |      80 | 12-13             
+  cart-merge.ts    |     100 |      100 |     100 |     100 |                   
+  cart.ts          |     100 |    96.77 |     100 |     100 | 201,301           
+  ...log-shared.ts |     100 |      100 |     100 |     100 |                   
+  catalog.ts       |   99.67 |    97.05 |     100 |   99.67 | 170               
+  checkout.ts      |   87.61 |    71.42 |     100 |   87.61 | ...53-254,322-323 
+  credits.ts       |     100 |      100 |     100 |     100 |                   
+  ids.ts           |     100 |      100 |     100 |     100 |                   
+  money.ts         |     100 |      100 |     100 |     100 |                   
+  orders.ts        |     100 |      100 |     100 |     100 |                   
+  ...ts-webhook.ts |   76.77 |    63.63 |     100 |   76.77 | ...05-209,218-219 
+  rate-limit.ts    |   96.96 |    91.66 |     100 |   96.96 | 25                
+  reservations.ts  |   87.93 |    71.42 |     100 |   87.93 | 33-34,78-82       
+  session.ts       |     100 |      100 |     100 |     100 |                   
+  styles.ts        |     100 |      100 |     100 |     100 |                   
+  utils.ts         |     100 |      100 |     100 |     100 |                   
+  ...-signature.ts |   90.76 |     87.5 |     100 |   90.76 | 37-38,43-44,83-84 
+-------------------|---------|----------|---------|---------|-------------------
+
+=============================== Coverage summary ===============================
+Statements   : 92.54% ( 2608/2818 )
+Branches     : 81.31% ( 544/669 )
+Functions    : 100% ( 119/119 )
+Lines        : 92.54% ( 2608/2818 )
+================================================================================

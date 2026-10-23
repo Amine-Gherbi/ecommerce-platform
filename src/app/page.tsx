@@ -18,10 +18,10 @@ export default async function HomePage() {
   return (
     <div>
       <section className="border-b border-rule">
-        <Container className="grid gap-8 py-8 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-10">
+        <Container className="grid gap-8 py-8 lg:grid-cols-12 lg:items-center lg:gap-12 lg:py-6">
           {hero !== null ? (
             <>
-              <div className="lg:col-span-6">
+              <div className="min-w-0 lg:col-span-6">
                 <p className={eyebrowClass}>
                   Featured · {hero.categoryName}
                 </p>
@@ -33,9 +33,9 @@ export default async function HomePage() {
                   {hero.price}
                 </p>
                 <p className="mt-4 max-w-[42ch] text-[14px] leading-6 text-ink/65">
-                  {hero.inStock ? "In stock now." : "Currently sold out."} From
-                  the {hero.brandName} range, shipped from our warehouse in
-                  Lyon with the total confirmed by the server.
+                  {hero.inStock
+                    ? "In stock now, and ships from our warehouse in Lyon. Order before 14:00 CET on a weekday and it leaves the same day."
+                    : "Currently sold out. Check back soon, or browse the rest of the range."}
                 </p>
                 <div className="mt-7 flex flex-wrap items-center gap-x-6 gap-y-3">
                   <Link
@@ -53,17 +53,18 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              <div className="lg:col-span-6">
+              <div className="min-w-0 lg:col-span-6">
                 <Link href={`/p/${hero.slug}`} className="group block">
-                  <div className="relative aspect-[16/9] overflow-hidden border border-rule bg-surface">
+                  <div className="relative aspect-[2/1] overflow-hidden border border-rule bg-surface">
                     {hero.image !== null ? (
                       <Image
                         src={hero.image.url}
                         alt={hero.image.alt}
-                        fill
+                        width={1600}
+                        height={900}
                         priority
                         sizes="(max-width: 1023px) 100vw, 50vw"
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.01]"
+                        className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.01]"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[13px] text-ink/40">
@@ -92,12 +93,12 @@ export default async function HomePage() {
       </section>
 
       <section id="new-this-month" className="scroll-mt-24">
-        <Container className="py-10 lg:py-12">
-          <div className="flex items-baseline justify-between gap-6 border-b border-rule pb-4">
+        <Container className="py-8">
+          <div className="flex items-baseline justify-between gap-6 border-b border-rule pb-3">
             <h2 className={sectionTitleClass}>New this month</h2>
             <p className="text-[13px] text-ink/45">Eight recent additions</p>
           </div>
-          <div className="mt-6">
+          <div className="mt-4">
             <ProductGrid products={newProducts} />
           </div>
         </Container>
