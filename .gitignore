@@ -8,6 +8,12 @@ next-env.d.ts
 
 # tests
 /coverage
+/test-results
+/playwright-report
+
+# generated load fixture and local hub-snapshot checks
+/load/fixture.json
+/.tmp
 
 # local env — .env.example is the committed contract
 .env
