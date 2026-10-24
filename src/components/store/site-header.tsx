@@ -78,14 +78,6 @@ export async function SiteHeader() {
 
   return (
     <header className="bg-page">
-      <div className="bg-accent text-accent-ink">
-        <Container className="flex h-9 items-center justify-center">
-          <p className="truncate text-[12px] leading-4">
-            Free delivery over €80 · Ships from Lyon in 1-2 business days
-          </p>
-        </Container>
-      </div>
-
       <div className="sticky top-0 z-40 border-b border-rule bg-page">
         <Container>
           <div className="flex h-16 items-center gap-8">
