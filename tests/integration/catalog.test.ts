@@ -430,7 +430,7 @@ describe("getProductPageData", () => {
     ).resolves.toBeNull();
   });
 
-  it("renders the selected variant, sorted string specs and related products", async () => {
+  it("renders the selected variant, defaults to an in-stock variant and sorts string specs", async () => {
     const brand = await makeBrand("Rega");
     const category = await makeCategory("turntables");
 
@@ -504,13 +504,58 @@ describe("getProductPageData", () => {
       "Older related",
     ]);
 
-    // An unknown variant parameter falls back to the first variant.
+    // An unknown variant parameter falls back to the first variant in stock.
     const fallback = await getProductPageData(target.slug, "not-a-variant");
     expect(fallback?.selectedVariant.id).toBe(target.variantIds[0]);
     expect(fallback?.selectedVariant.inStock).toBe(true);
     expect(fallback?.images).toEqual([
       { url: "https://example.test/front.jpg", alt: "front" },
     ]);
+
+    // A sold-out first variant must not be the default when another one has
+    // stock; the picked variant and the picker labels follow the same stock.
+    const soldOutFirst = await makeProduct({
+      categoryId: category.id,
+      brandId: brand.id,
+      title: "Sold-out first",
+      slug: "sold-out-first",
+      variants: [
+        { title: "Silver", priceCents: 10_000, stock: 0 },
+        { title: "Black", priceCents: 12_000, stock: 3 },
+      ],
+    });
+    const defaulted = await getProductPageData(soldOutFirst.slug, undefined);
+    expect(defaulted?.selectedVariant).toEqual({
+      id: soldOutFirst.variantIds[1],
+      title: "Black",
+      price: "€120.00",
+      inStock: true,
+      maxQuantity: 3,
+    });
+    expect(defaulted?.variants).toEqual([
+      { id: soldOutFirst.variantIds[0], title: "Silver", inStock: false },
+      { id: soldOutFirst.variantIds[1], title: "Black", inStock: true },
+    ]);
+
+    // With no stock anywhere the first variant stays selected and sold out.
+    const allSoldOut = await makeProduct({
+      categoryId: category.id,
+      brandId: brand.id,
+      title: "All sold out",
+      slug: "all-sold-out",
+      variants: [
+        { title: "Silver", priceCents: 10_000, stock: 0 },
+        { title: "Black", priceCents: 12_000, stock: 0 },
+      ],
+    });
+    const unavailable = await getProductPageData(allSoldOut.slug, undefined);
+    expect(unavailable?.selectedVariant).toEqual({
+      id: allSoldOut.variantIds[0],
+      title: "Silver",
+      price: "€100.00",
+      inStock: false,
+      maxQuantity: 0,
+    });
   });
 
   it("treats non-object specs as no specs", async () => {
