@@ -1,5 +1,7 @@
 # ecommerce-platform
 
+**Case study:** https://gherbi.pages.dev/projects/ecommerce-platform/ — the store itself runs locally (see *Run*), not on a host.
+
 A Next.js 15 / PostgreSQL 16 storefront. Its hard problem is money correctness under concurrency.
 
 **Hard problem:** 20 concurrent checkouts against stock 5 must create exactly 5 orders at the server-recomputed total, and no reserved unit may leak (`tests/integration/checkout.oversell.test.ts`).
