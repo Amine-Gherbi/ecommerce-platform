@@ -24,8 +24,11 @@ npm run verify
 | `prisma migrate diff --exit-code` | `No difference detected.` |
 | Playwright | 5 tests passed in 2.0 min |
 
-The CI workflow (`.github/workflows/ci.yml`) runs the same command, but it has
-never executed: `git remote -v` prints nothing. No green CI run is claimed.
+The CI workflow (`.github/workflows/ci.yml`) runs the same command on
+`ubuntu-latest` with a `postgres:16` service, and it is green on `master`:
+run 40081391256, 2026-10-24, 2 m 28 s. The first two runs failed on workflow
+bugs — `psql` and an empty `shop_test` — both fixed and recorded in
+[`docs/PIPELINE.md`](PIPELINE.md).
 
 ## README claims
 
@@ -44,7 +47,7 @@ never executed: `git remote -v` prints nothing. No green CI run is claimed.
 | p95 4.58 s, 248/250, 750 HTTP requests | raw k6 summary in `docs/load/checkout.md`; database counts in the same file |
 | Payments simulated, `pi_demo_*`, no Stripe key | `src/lib/checkout.ts:279`; no `stripe` import under `src/` (`grep -r "from \"stripe\"" src` → no matches) |
 | No live URL | no deployment exists; `git remote -v` is empty; nothing in this repo names a host |
-| CI defined but never run | `.github/workflows/ci.yml:1-7`; `git remote -v` empty |
+| CI green on `master` | run 40081391256 (2026-10-24); `.github/workflows/ci.yml` |
 
 ## Visual identity (P2-R10-theme)
 
@@ -228,4 +231,5 @@ Test counts and coverage are gate results, not performance claims.
   `PENDING` order after 30 minutes.
 - **No live Stripe.** No `stripe` import exists under `src/`; the PaymentIntent
   id is generated locally as `pi_demo_*` (`src/lib/checkout.ts:279`).
-- **No deployment and no CI run.** See the Gate section.
+- **No deployment, but CI now runs.** The store is a local demo; the workflow is
+  green on `master` (run 40081391256). See the Gate section.

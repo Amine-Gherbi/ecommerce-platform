@@ -1,19 +1,21 @@
 # Pipeline
 
-## Status: defined, never executed
+## Status: green on master (2026-10-24)
 
-`.github/workflows/ci.yml` is committed. **It has never run.** This repository
-has no git remote (`git remote -v` prints nothing), so there is no GitHub
-Actions runner, no run URL, no badge claim, and no green check to point at.
-What exists is the workflow file and a local transcript of the same command:
-`npm run verify` exits 0 on this machine (Windows 11, Node 22.23.4, PostgreSQL
-16.13). Local evidence is recorded in [`docs/PROOF.md`](PROOF.md); CI evidence
-does not exist yet.
+`.github/workflows/ci.yml` runs on `push` to `master`/`main` and on every pull request. It is green on `master`:
+run [40081391256](https://github.com/Amine-Gherbi/ecommerce-platform/actions/runs/40081391256),
+2026-10-24T09:17:53Z → 09:20:21Z, job `verify`.
 
-When the repo is pushed to a remote, the workflow runs on `push` to `main` or
-`master` and on every pull request. Until then, treat "CI is green" as false.
+The first two runs failed, and both were workflow bugs rather than flakes:
 
-## What would run
+| Run | Failure | Cause | Fix |
+| --- | --- | --- | --- |
+| 1 | `psql: error: invalid URI query parameter: "schema"` | the step handed Prisma's `DATABASE_URL` to `psql` | connect with `psql -h localhost -U postgres` plus `PGPASSWORD` |
+| 2 | `relation "WebhookEvent" does not exist` | `shop_test` was empty: Vitest runs before Playwright's global setup | `prisma migrate deploy` on `shop_dev`, `prisma db push` on `shop_test` |
+
+Local evidence is recorded in [`docs/PROOF.md`](PROOF.md); the run URL above is the CI evidence.
+
+## What runs
 
 One job, `verify`, on `ubuntu-latest`, with a `postgres:16` service container.
 The step list is deliberately short; the gate itself is one command so the
@@ -23,9 +25,11 @@ local and CI definitions cannot drift.
 | --- | --- |
 | `actions/checkout` | the exact commit is what runs |
 | `actions/setup-node` (Node 22, npm cache) | the engine in `package.json` is the runtime |
-| `psql ... CREATE DATABASE shop_test` | the test database exists next to `shop_dev` |
+| `psql -h localhost -U postgres ... CREATE DATABASE shop_test` | the test database exists next to `shop_dev` |
 | `npm ci` | dependencies come from `package-lock.json`, not a floating install |
+| `npx prisma migrate deploy` | `shop_dev` carries the committed migrations before the drift check |
 | `npx playwright install --with-deps chromium` | the E2E browser exists; no test silently skips |
+| `DATABASE_URL=$TEST_DATABASE_URL npx prisma db push` | `shop_test` has the schema Vitest truncates |
 | `npm run verify` | the whole gate, with no `continue-on-error` and no `\|\| true` |
 
 `npm run verify` is:
@@ -45,9 +49,9 @@ eslint . && tsc --noEmit && vitest run --coverage
   33 files, 181 tests, 92.54 % statements (`docs/proof/verify.txt`).
 - **prisma migrate diff --exit-code** — 0 clean, 2 drift, 1 error. Drift is a
   failure, not a warning. It compares the database named by `DATABASE_URL` with
-  `prisma/schema.prisma`, so that database must already be migrated. The
-  workflow creates `shop_dev` but does not run `prisma migrate deploy`; since
-  the workflow has never executed, whether that step passes there is untested.
+  `prisma/schema.prisma`, so that database must already be migrated. The workflow
+  runs `prisma migrate deploy` against `shop_dev` before the gate, and the step
+  passes on the runner (run 40081391256).
 - **playwright test** — four browser specs, five tests:
   `admin.spec.ts` (an admin fulfils a paid order; a customer is redirected out
   of `/admin`), `auth.spec.ts` (a wrong password stays on the form),
