@@ -75,6 +75,13 @@ jobs:
       - name: Install the Playwright Chromium build
         run: npx playwright install --with-deps chromium
 
+      # Vitest's integration suites reset and truncate `shop_test` before the
+      # Playwright global setup ever runs, so the schema has to exist first.
+      # `shop_test` carries no migration history by design; `db push` is how the
+      # local gate builds it too.
+      - name: Build the test database schema
+        run: DATABASE_URL="$TEST_DATABASE_URL" npx prisma db push --skip-generate
+
       # One step, exactly the local gate. No continue-on-error, no `|| true`:
       # lint, types, Vitest with coverage, migration drift and Playwright E2E.
       - name: Verify
