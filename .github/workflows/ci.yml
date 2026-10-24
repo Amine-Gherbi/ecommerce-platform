@@ -59,10 +59,18 @@ jobs:
           cache: npm
 
       - name: Create the test database
-        run: psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -c 'CREATE DATABASE shop_test;'
+        env:
+          PGPASSWORD: postgres
+        run: psql -h localhost -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'CREATE DATABASE shop_test;'
 
       - name: Install dependencies from the lockfile
         run: npm ci
+
+      # The drift check compares shop_dev against the schema, so the dev
+      # database needs the committed migrations. shop_test is built by the
+      # Playwright global setup (`db push` + seed 42), not here.
+      - name: Apply the committed migrations to the dev database
+        run: npx prisma migrate deploy
 
       - name: Install the Playwright Chromium build
         run: npx playwright install --with-deps chromium
