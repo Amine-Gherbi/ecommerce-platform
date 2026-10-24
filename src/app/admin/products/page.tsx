@@ -105,7 +105,7 @@ export default async function AdminProductsPage({
   return (
     <div>
       <h1 className={pageTitleClass}>Products</h1>
-      <p className="mt-3 text-[13px] leading-5 text-ink/55">
+      <p className="mt-3 text-[13px] leading-5 text-muted">
         Archiving removes a product from the storefront. Existing orders keep
         their item snapshots.
       </p>
@@ -113,13 +113,13 @@ export default async function AdminProductsPage({
       {error !== null ? (
         <p
           role="alert"
-          className="mt-5 border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+          className="mt-5 border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
         >
           {error}
         </p>
       ) : null}
       {saved === "archived" || saved === "restored" ? (
-        <p className="mt-5 border-l-2 border-rule pl-3 text-[13px] leading-5 text-ink/60">
+        <p className="mt-5 border-l-2 border-rule pl-3 text-[13px] leading-5 text-muted">
           {saved === "archived" ? "Product archived." : "Product restored."}
         </p>
       ) : null}
@@ -156,14 +156,14 @@ export default async function AdminProductsPage({
       </form>
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="text-[13px] leading-5 text-ink/45">
+        <p className="text-[13px] leading-5 text-muted">
           {products.length}{" "}
           {products.length === 1 ? "product" : "products"}
         </p>
         {hasFilters ? (
           <Link
             href="/admin/products"
-            className={cn("text-[13px] text-ink/55", textLinkClass)}
+            className={cn("text-[13px] text-muted", textLinkClass)}
           >
             Clear filters
           </Link>
@@ -171,7 +171,7 @@ export default async function AdminProductsPage({
       </div>
 
       {products.length === 0 ? (
-        <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-ink/55">
+        <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-muted">
           No products match these filters.
         </p>
       ) : (
@@ -179,23 +179,23 @@ export default async function AdminProductsPage({
           <table className="w-full min-w-[820px] border-collapse text-left">
             <caption className="sr-only">Products</caption>
             <thead>
-              <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                <th scope="col" className="py-3 pr-4 font-medium">
+              <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                <th scope="col" className="py-2 pr-4 font-medium">
                   Product
                 </th>
-                <th scope="col" className="py-3 pr-4 text-right font-medium">
+                <th scope="col" className="py-2 pr-4 text-right font-medium">
                   Variants
                 </th>
-                <th scope="col" className="py-3 pr-4 text-right font-medium">
+                <th scope="col" className="py-2 pr-4 text-right font-medium">
                   Stock
                 </th>
-                <th scope="col" className="py-3 pr-4 font-medium">
+                <th scope="col" className="py-2 pr-4 font-medium">
                   Price range
                 </th>
-                <th scope="col" className="py-3 pr-4 font-medium">
+                <th scope="col" className="py-2 pr-4 font-medium">
                   Status
                 </th>
-                <th scope="col" className="py-3 text-right font-medium">
+                <th scope="col" className="py-2 text-right font-medium">
                   Action
                 </th>
               </tr>
@@ -210,30 +210,30 @@ export default async function AdminProductsPage({
 
                 return (
                   <tr key={product.id} className="border-b border-rule">
-                    <td className="py-4 pr-4">
+                    <td className="py-2.5 pr-4">
                       <Link
                         href={`/admin/products/${product.id}`}
-                        className={cn("text-[14px] text-ink", textLinkClass)}
+                        className={cn("text-[15px] text-ink", textLinkClass)}
                       >
                         {product.title}
                       </Link>
-                      <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                      <p className="mt-1 text-[13px] leading-4 text-muted">
                         {product.brand.name}
                       </p>
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/65">
+                    <td className="py-2.5 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {product.variants.length}
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/65">
+                    <td className="py-2.5 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {totalStock}
                     </td>
-                    <td className="py-4 pr-4 text-[13px] tabular-nums text-ink/65">
+                    <td className="py-2.5 pr-4 text-[13px] tabular-nums text-muted">
                       {priceRange(product.variants)}
                     </td>
-                    <td className="py-4 pr-4 text-[12px] uppercase tracking-[0.1em] text-ink/55">
+                    <td className="py-2.5 pr-4 text-[13px] uppercase tracking-[0.14em] text-muted">
                       {STATUS_LABELS[product.status]}
                     </td>
-                    <td className="py-4 text-right">
+                    <td className="py-2.5 text-right">
                       <form action={setProductArchivedAction}>
                         <input
                           type="hidden"
@@ -247,7 +247,7 @@ export default async function AdminProductsPage({
                         />
                         <button
                           type="submit"
-                          className="text-[13px] text-ink/55 underline decoration-rule underline-offset-4 transition-colors hover:text-ink hover:decoration-ink"
+                          className="text-[13px] text-muted underline decoration-rule underline-offset-4 transition-colors hover:text-ink hover:decoration-ink"
                         >
                           {archived ? "Restore" : "Archive"}
                         </button>

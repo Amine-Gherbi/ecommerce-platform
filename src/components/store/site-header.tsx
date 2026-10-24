@@ -24,25 +24,28 @@ function SearchIcon() {
   );
 }
 
-function SearchForm() {
+function SearchForm({ id }: { id: string }) {
   return (
     <form
       action="/search"
       method="get"
       role="search"
-      className="flex h-9 w-full border border-rule bg-surface transition-colors focus-within:border-ink"
+      className="flex h-10 w-full items-center rounded-full bg-surface pl-4 pr-1 transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent md:w-[240px]"
     >
+      <label htmlFor={id} className="sr-only">
+        Search products
+      </label>
       <input
+        id={id}
         type="search"
         name="q"
-        aria-label="Search products"
         placeholder="Search products"
-        className="h-full min-w-0 flex-1 appearance-none bg-transparent px-3 text-[13px] text-ink placeholder:text-ink/40 focus:outline-none"
+        className="h-full min-w-0 flex-1 appearance-none bg-transparent text-[13px] text-ink placeholder:text-muted focus:outline-none"
       />
       <button
         type="submit"
         aria-label="Search"
-        className={`flex h-full w-9 shrink-0 items-center justify-center border-l border-rule text-ink/60 transition-colors hover:bg-ink/[0.04] hover:text-ink ${focusRing}`}
+        className={`flex size-8 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:text-accent ${focusRing}`}
       >
         <SearchIcon />
       </button>
@@ -61,7 +64,7 @@ function CategoryLinks({
         <Link
           key={category.slug}
           href={`/c/${category.slug}`}
-          className="whitespace-nowrap text-[13px] leading-5 text-ink/70 transition-colors hover:text-ink"
+          className="flex min-h-11 items-center whitespace-nowrap text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-muted transition-colors hover:text-ink"
         >
           {category.name}
         </Link>
@@ -74,49 +77,61 @@ export async function SiteHeader() {
   const categories = await getNavCategories();
 
   return (
-    <header className="sticky top-0 z-40 border-b border-rule bg-surface">
-      <Container>
-        <div className="flex h-14 items-center gap-6 lg:h-16">
-          <Link href="/" className="shrink-0" aria-label="Kestrel Audio home">
-            <span className="flex items-baseline gap-2">
-              <span className="text-[20px] font-medium leading-none tracking-[-0.02em] text-ink">
-                Kestrel
+    <header className="bg-page">
+      <div className="bg-accent text-accent-ink">
+        <Container className="flex h-9 items-center justify-center">
+          <p className="truncate text-[12px] leading-4">
+            Free delivery over €80 · Ships from Lyon in 1-2 business days
+          </p>
+        </Container>
+      </div>
+
+      <div className="sticky top-0 z-40 border-b border-rule bg-page">
+        <Container>
+          <div className="flex h-16 items-center gap-8">
+            <Link
+              href="/"
+              className={`flex min-h-11 shrink-0 items-baseline gap-2 ${focusRing}`}
+              aria-label="Kestrel Audio home"
+            >
+              <span className="text-[22px] font-bold lowercase leading-none tracking-[-0.03em] text-ink">
+                kestrel
               </span>
-              <span className="text-[11px] uppercase leading-none tracking-[0.18em] text-ink/45">
-                Audio
+              <span className="text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-muted">
+                audio
               </span>
-            </span>
-          </Link>
+            </Link>
+
+            <nav
+              aria-label="Product categories"
+              className="hidden items-center gap-7 lg:flex"
+            >
+              <CategoryLinks categories={categories} />
+            </nav>
+
+            <div className="ml-auto flex items-center gap-5">
+              <div className="hidden md:block">
+                <SearchForm id="site-search-desktop" />
+              </div>
+              <Suspense fallback={<AccountNavFallback />}>
+                <AccountNav />
+              </Suspense>
+              <CartCount />
+            </div>
+          </div>
+
+          <div className="pb-3 md:hidden">
+            <SearchForm id="site-search-mobile" />
+          </div>
 
           <nav
             aria-label="Product categories"
-            className="hidden items-center gap-6 lg:flex"
+            className="flex gap-6 overflow-x-auto border-t border-rule lg:hidden"
           >
             <CategoryLinks categories={categories} />
           </nav>
-
-          <div className="ml-auto flex items-center gap-5">
-            <div className="hidden w-52 md:block xl:w-64">
-              <SearchForm />
-            </div>
-            <Suspense fallback={<AccountNavFallback />}>
-              <AccountNav />
-            </Suspense>
-            <CartCount />
-          </div>
-        </div>
-
-        <div className="pb-3 md:hidden">
-          <SearchForm />
-        </div>
-
-        <nav
-          aria-label="Product categories"
-          className="flex gap-5 overflow-x-auto border-t border-rule py-2.5 lg:hidden"
-        >
-          <CategoryLinks categories={categories} />
-        </nav>
-      </Container>
+        </Container>
+      </div>
     </header>
   );
 }

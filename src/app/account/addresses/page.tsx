@@ -27,13 +27,13 @@ export default async function AddressesPage() {
   return (
     <div>
       <h1 className={pageTitleClass}>Addresses</h1>
-      <p className="mt-3 max-w-[60ch] text-[13px] leading-5 text-ink/55">
+      <p className="mt-3 max-w-[60ch] text-[13px] leading-5 text-muted">
         Addresses are used at checkout. You need at least one; the default is
         selected automatically.
       </p>
 
-      <details className="mt-8 border border-rule">
-        <summary className="px-4 py-3 text-[13px] leading-5 text-ink/70 transition-colors hover:text-ink">
+      <details className="mt-8 border border-control">
+        <summary className="px-4 py-3 text-[13px] leading-5 text-muted transition-colors hover:text-ink">
           Add an address
         </summary>
         <div className="border-t border-rule p-4 lg:p-6">
@@ -42,7 +42,7 @@ export default async function AddressesPage() {
       </details>
 
       {addresses.length === 0 ? (
-        <p className="mt-8 border-t border-rule pt-8 text-[14px] leading-5 text-ink/60">
+        <p className="mt-8 border-t border-rule pt-8 text-[15px] leading-5 text-muted">
           No addresses yet. Use the form above to add the first one.
         </p>
       ) : (
@@ -52,17 +52,17 @@ export default async function AddressesPage() {
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="text-[16px] leading-6 text-ink">
+                    <h2 className="text-[17px] leading-6 text-ink">
                       {address.label}
                     </h2>
                     {address.isDefault ? (
-                      <span className="border border-rule px-2 py-0.5 text-[10px] uppercase leading-4 tracking-[0.14em] text-ink/50">
+                      <span className="border border-control px-2 py-0.5 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                         Default
                       </span>
                     ) : null}
                   </div>
 
-                  <address className="mt-2 not-italic text-[13px] leading-5 text-ink/65">
+                  <address className="mt-2 not-italic text-[13px] leading-5 text-muted">
                     <p>{address.line1}</p>
                     {address.line2 !== null ? <p>{address.line2}</p> : null}
                     <p>
@@ -88,8 +88,8 @@ export default async function AddressesPage() {
                 </div>
               </div>
 
-              <details className="mt-4 border border-rule">
-                <summary className="px-4 py-2.5 text-[12px] leading-5 text-ink/60 transition-colors hover:text-ink">
+              <details className="mt-4 border border-control">
+                <summary className="px-4 py-2.5 text-[13px] leading-5 text-muted transition-colors hover:text-ink">
                   Edit address
                 </summary>
                 <div className="border-t border-rule p-4">

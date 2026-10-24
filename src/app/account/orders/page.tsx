@@ -33,13 +33,13 @@ export default async function OrdersPage() {
   return (
     <div>
       <h1 className={pageTitleClass}>Orders</h1>
-      <p className="mt-3 text-[13px] leading-5 text-ink/55">
+      <p className="mt-3 text-[13px] leading-5 text-muted">
         Every order on this account, newest first.
       </p>
 
       {orders.length === 0 ? (
         <div className="mt-8 border-t border-rule py-12">
-          <p className="text-[14px] leading-5 text-ink">
+          <p className="text-[15px] leading-5 text-ink">
             You have not placed an order yet.
           </p>
           <Link href="/" className={`${primaryButtonClass} mt-5`}>
@@ -51,7 +51,7 @@ export default async function OrdersPage() {
           <table className="w-full min-w-[560px] border-collapse text-left">
             <caption className="sr-only">Your orders</caption>
             <thead>
-              <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
+              <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                 <th scope="col" className="py-3 pr-4 font-medium">
                   Order
                 </th>
@@ -72,18 +72,18 @@ export default async function OrdersPage() {
                   <td className="py-4 pr-4">
                     <Link
                       href={`/account/orders/${order.number}`}
-                      className={cn("text-[14px] text-ink", textLinkClass)}
+                      className={cn("text-[15px] text-ink", textLinkClass)}
                     >
                       {order.number}
                     </Link>
                   </td>
-                  <td className="py-4 pr-4 text-[13px] text-ink/60">
+                  <td className="py-4 pr-4 text-[13px] text-muted">
                     {formatOrderDate(order.createdAt)}
                   </td>
-                  <td className="py-4 pr-4 text-[12px] uppercase tracking-[0.1em] text-ink/55">
+                  <td className="py-4 pr-4 text-[13px] uppercase tracking-[0.14em] text-muted">
                     {orderStatusLabel(order.status)}
                   </td>
-                  <td className="py-4 text-right text-[14px] tabular-nums text-ink">
+                  <td className="py-4 text-right text-[15px] tabular-nums text-ink">
                     {formatPrice(order.totalCents)}
                   </td>
                 </tr>

@@ -8,6 +8,23 @@ interface CartSummaryResponse {
   count?: unknown;
 }
 
+function CartIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.35"
+      aria-hidden="true"
+    >
+      <path d="M2 3h1.6l1.5 7.5h6.9l1.4-5.2H4.1" strokeLinejoin="round" />
+      <circle cx="6" cy="13" r="1.1" />
+      <circle cx="11.4" cy="13" r="1.1" />
+    </svg>
+  );
+}
+
 export function CartCount() {
   const [count, setCount] = useState(0);
   const pathname = usePathname();
@@ -57,12 +74,11 @@ export function CartCount() {
     <Link
       href="/cart"
       aria-label={`Cart, ${count} ${count === 1 ? "item" : "items"}`}
-      className="inline-flex h-9 items-center gap-2 border border-rule px-3 text-[13px] text-ink transition-colors hover:border-ink"
+      className="inline-flex h-11 shrink-0 items-center gap-2 text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-ink transition-colors hover:text-accent"
     >
+      <CartIcon />
       Cart
-      <span className="min-w-4 text-center text-[12px] tabular-nums text-ink/55">
-        {count}
-      </span>
+      <span className="tabular-nums">({count})</span>
     </Link>
   );
 }

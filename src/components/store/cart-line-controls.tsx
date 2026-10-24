@@ -67,7 +67,7 @@ export function CartLineControls({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
         <div
-          className="flex h-9 items-center border border-rule"
+          className="flex h-11 items-center border border-control"
           aria-label="Quantity"
         >
           <button
@@ -75,7 +75,7 @@ export function CartLineControls({
             onClick={() => changeQuantity(currentQuantity - 1)}
             disabled={isPending || currentQuantity <= 1}
             aria-label="Decrease quantity"
-            className={`flex size-8 items-center justify-center text-[14px] text-ink/65 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 ${focusRing}`}
+            className={`flex size-11 items-center justify-center text-[15px] text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-35 ${focusRing}`}
           >
             −
           </button>
@@ -90,7 +90,7 @@ export function CartLineControls({
             onClick={() => changeQuantity(currentQuantity + 1)}
             disabled={isPending || currentQuantity >= maxQuantity}
             aria-label="Increase quantity"
-            className={`flex size-8 items-center justify-center text-[14px] text-ink/65 transition-colors hover:text-ink disabled:cursor-not-allowed disabled:opacity-35 ${focusRing}`}
+            className={`flex size-11 items-center justify-center text-[15px] text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-35 ${focusRing}`}
           >
             +
           </button>
@@ -101,7 +101,7 @@ export function CartLineControls({
           onClick={remove}
           disabled={isPending}
           className={cn(
-            "text-[13px] text-ink/55 transition-colors hover:text-ink disabled:opacity-40",
+            "inline-flex min-h-11 items-center text-[13px] uppercase tracking-[0.14em] text-muted disabled:opacity-40",
             textLinkClass,
           )}
         >
@@ -111,7 +111,7 @@ export function CartLineControls({
 
       <div aria-live="polite" className="min-h-4">
         {error !== null ? (
-          <p className="text-[13px] leading-5 text-ink/70">{error}</p>
+          <p className="text-[13px] leading-5 text-sale">{error}</p>
         ) : null}
       </div>
     </div>

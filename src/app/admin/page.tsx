@@ -35,11 +35,11 @@ function Counter({
   return (
     <div className="border-t border-rule pt-4">
       <p className={eyebrowClass}>{label}</p>
-      <p className="mt-2 text-[28px] font-medium leading-9 tabular-nums text-ink">
+      <p className="mt-2 text-[30px] font-medium leading-9 tabular-nums text-ink">
         {value}
       </p>
       {note !== undefined ? (
-        <p className="mt-1 text-[12px] leading-4 text-ink/45">{note}</p>
+        <p className="mt-1 text-[13px] leading-4 text-muted">{note}</p>
       ) : null}
     </div>
   );
@@ -100,7 +100,7 @@ export default async function AdminDashboardPage() {
   return (
     <div>
       <h1 className={pageTitleClass}>Dashboard</h1>
-      <p className="mt-3 text-[13px] leading-5 text-ink/55">
+      <p className="mt-3 text-[13px] leading-5 text-muted">
         Open orders are pending, paid or refund required. Revenue is paid and
         fulfilled orders by payment date, UTC.
       </p>
@@ -125,14 +125,14 @@ export default async function AdminDashboardPage() {
           <h2 className={sectionTitleClass}>Latest orders</h2>
           <Link
             href="/admin/orders"
-            className={cn("text-[13px] text-ink/55", textLinkClass)}
+            className={cn("text-[13px] text-muted", textLinkClass)}
           >
             All orders
           </Link>
         </div>
 
         {latestOrders.length === 0 ? (
-          <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-ink/55">
+          <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-muted">
             No orders yet.
           </p>
         ) : (
@@ -140,20 +140,20 @@ export default async function AdminDashboardPage() {
             <table className="w-full min-w-[640px] border-collapse text-left">
               <caption className="sr-only">Ten latest orders</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Order
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Customer
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Status
                   </th>
-                  <th scope="col" className="py-3 pr-4 text-right font-medium">
+                  <th scope="col" className="py-2 pr-4 text-right font-medium">
                     Total
                   </th>
-                  <th scope="col" className="py-3 text-right font-medium">
+                  <th scope="col" className="py-2 text-right font-medium">
                     Age
                   </th>
                 </tr>
@@ -161,24 +161,24 @@ export default async function AdminDashboardPage() {
               <tbody>
                 {latestOrders.map((order) => (
                   <tr key={order.number} className="border-b border-rule">
-                    <td className="py-4 pr-4">
+                    <td className="py-2.5 pr-4">
                       <Link
                         href={`/admin/orders/${order.number}`}
-                        className={cn("text-[14px] text-ink", textLinkClass)}
+                        className={cn("text-[15px] text-ink", textLinkClass)}
                       >
                         {order.number}
                       </Link>
                     </td>
-                    <td className="py-4 pr-4 text-[13px] text-ink/65">
+                    <td className="py-2.5 pr-4 text-[13px] text-muted">
                       {order.user.email}
                     </td>
-                    <td className="py-4 pr-4 text-[12px] uppercase tracking-[0.1em] text-ink/55">
+                    <td className="py-2.5 pr-4 text-[13px] uppercase tracking-[0.14em] text-muted">
                       {orderStatusLabel(order.status)}
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink">
+                    <td className="py-2.5 pr-4 text-right text-[13px] tabular-nums text-ink">
                       {formatPrice(order.totalCents)}
                     </td>
-                    <td className="py-4 text-right text-[13px] tabular-nums text-ink/55">
+                    <td className="py-2.5 text-right text-[13px] tabular-nums text-muted">
                       <time dateTime={order.createdAt.toISOString()}>
                         {formatOrderAge(order.createdAt, now)}
                       </time>
@@ -196,14 +196,14 @@ export default async function AdminDashboardPage() {
           <h2 className={sectionTitleClass}>Lowest stock</h2>
           <Link
             href="/admin/inventory"
-            className={cn("text-[13px] text-ink/55", textLinkClass)}
+            className={cn("text-[13px] text-muted", textLinkClass)}
           >
             Inventory
           </Link>
         </div>
 
         {lowestStock.length === 0 ? (
-          <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-ink/55">
+          <p className="mt-5 border-t border-rule pt-5 text-[13px] leading-5 text-muted">
             No variants.
           </p>
         ) : (
@@ -211,17 +211,17 @@ export default async function AdminDashboardPage() {
             <table className="w-full min-w-[600px] border-collapse text-left">
               <caption className="sr-only">Five lowest-stock variants</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     SKU
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Product
                   </th>
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Variant
                   </th>
-                  <th scope="col" className="py-3 text-right font-medium">
+                  <th scope="col" className="py-2 text-right font-medium">
                     Stock
                   </th>
                 </tr>
@@ -229,10 +229,10 @@ export default async function AdminDashboardPage() {
               <tbody>
                 {lowestStock.map((variant) => (
                   <tr key={variant.id} className="border-b border-rule">
-                    <td className="py-4 pr-4 text-[12px] tabular-nums text-ink/55">
+                    <td className="py-2.5 pr-4 text-[13px] tabular-nums text-muted">
                       {variant.sku}
                     </td>
-                    <td className="py-4 pr-4">
+                    <td className="py-2.5 pr-4">
                       <Link
                         href={`/admin/products/${variant.product.id}`}
                         className={cn("text-[13px] text-ink", textLinkClass)}
@@ -240,15 +240,15 @@ export default async function AdminDashboardPage() {
                         {variant.product.title}
                       </Link>
                       {variant.product.status === "ARCHIVED" ? (
-                        <span className="ml-2 text-[11px] uppercase tracking-[0.1em] text-ink/40">
+                        <span className="ml-2 text-[11px] uppercase tracking-[0.14em] text-muted">
                           Archived
                         </span>
                       ) : null}
                     </td>
-                    <td className="py-4 pr-4 text-[13px] text-ink/65">
+                    <td className="py-2.5 pr-4 text-[13px] text-muted">
                       {variant.title}
                     </td>
-                    <td className="py-4 text-right text-[13px] tabular-nums text-ink">
+                    <td className="py-2.5 text-right text-[13px] tabular-nums text-ink">
                       {variant.stock}
                     </td>
                   </tr>

@@ -33,14 +33,14 @@ export function Pagination({
       aria-label="Pagination"
       className="mt-12 flex flex-wrap items-center justify-between gap-6 border-t border-rule pt-6 lg:mt-16"
     >
-      <p className="text-[13px] text-ink/55">
+      <p className="text-[13px] uppercase tracking-[0.14em] text-muted">
         Page {page} of {pageCount}
       </p>
       <div className="flex items-center gap-5">
         {page > 1 ? (
           <Link
             href={pageHref(basePath, baseQuery, page - 1)}
-            className="text-[13px] text-ink/65 underline decoration-rule underline-offset-4 hover:text-ink hover:decoration-ink"
+            className="inline-flex min-h-11 items-center text-[13px] uppercase tracking-[0.14em] text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
           >
             Previous
           </Link>
@@ -53,8 +53,8 @@ export function Pagination({
               aria-current={pageNumber === page ? "page" : undefined}
               className={
                 pageNumber === page
-                  ? "text-[13px] text-ink underline decoration-ink underline-offset-4"
-                  : "text-[13px] text-ink/55 underline decoration-transparent underline-offset-4 hover:text-ink hover:decoration-rule"
+                  ? "inline-flex min-h-11 min-w-6 items-center justify-center text-[13px] tabular-nums text-ink underline decoration-ink underline-offset-4"
+                  : "inline-flex min-h-11 min-w-6 items-center justify-center text-[13px] tabular-nums text-muted underline decoration-transparent underline-offset-4 hover:text-ink hover:decoration-rule"
               }
             >
               {pageNumber}
@@ -64,7 +64,7 @@ export function Pagination({
         {page < pageCount ? (
           <Link
             href={pageHref(basePath, baseQuery, page + 1)}
-            className="text-[13px] text-ink/65 underline decoration-rule underline-offset-4 hover:text-ink hover:decoration-ink"
+            className="inline-flex min-h-11 items-center text-[13px] uppercase tracking-[0.14em] text-ink underline decoration-rule underline-offset-4 hover:decoration-ink"
           >
             Next
           </Link>

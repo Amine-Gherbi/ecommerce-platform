@@ -7,14 +7,31 @@ import { focusRing } from "@/lib/styles";
 import { cn } from "@/lib/utils";
 
 const menuLinkClass =
-  "block px-4 py-2 text-[13px] leading-5 text-ink/70 transition-colors hover:bg-ink/[0.04] hover:text-ink";
+  "flex min-h-11 items-center px-4 text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-ink transition-colors hover:text-accent";
+
+function UserIcon() {
+  return (
+    <svg
+      viewBox="0 0 16 16"
+      className="size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.35"
+      aria-hidden="true"
+    >
+      <circle cx="8" cy="5" r="2.5" />
+      <path d="M2.75 14c0-2.9 2.35-4.5 5.25-4.5s5.25 1.6 5.25 4.5" />
+    </svg>
+  );
+}
 
 export function AccountNavFallback() {
   return (
     <Link
       href="/signin"
-      className="text-[13px] text-ink/70 transition-colors hover:text-ink"
+      className="inline-flex min-h-11 items-center gap-2 text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-ink transition-colors hover:text-accent"
     >
+      <UserIcon />
       Account
     </Link>
   );
@@ -31,10 +48,11 @@ export async function AccountNav() {
     <details className="relative">
       <summary
         className={cn(
-          "flex cursor-pointer list-none items-center gap-1.5 text-[13px] text-ink transition-colors hover:text-ink/65",
+          "flex min-h-11 cursor-pointer list-none items-center gap-2 text-[11px] font-semibold uppercase leading-none tracking-[0.14em] text-ink transition-colors hover:text-accent",
           focusRing,
         )}
       >
+        <UserIcon />
         {firstName(session.user.name)}
         <svg
           viewBox="0 0 10 6"
@@ -48,7 +66,7 @@ export async function AccountNav() {
         </svg>
       </summary>
 
-      <div className="absolute right-0 top-full z-50 mt-3 w-48 border border-rule bg-surface py-1 shadow-[0_10px_30px_rgba(17,17,16,0.08)]">
+      <div className="absolute right-0 top-full z-50 mt-1 w-52 border border-rule bg-page py-1">
         {session.user.role === "ADMIN" ? (
           <Link href="/admin" className={menuLinkClass}>
             Admin console
@@ -66,10 +84,7 @@ export async function AccountNav() {
         <form action={signOutAction} className="mt-1 border-t border-rule pt-1">
           <button
             type="submit"
-            className={cn(
-              menuLinkClass,
-              "w-full text-left text-ink/55",
-            )}
+            className={cn(menuLinkClass, "w-full text-left")}
           >
             Sign out
           </button>

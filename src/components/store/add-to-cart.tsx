@@ -52,12 +52,12 @@ export function AddToCart({
   return (
     <div className="flex flex-col gap-3">
       {!soldOut ? (
-        <label className="flex items-center gap-3">
+        <label className="flex min-h-11 items-center gap-3">
           <span className={labelClass}>Quantity</span>
           <select
             value={quantity}
             onChange={(event) => setQuantity(Number(event.target.value))}
-            className={cn(fieldClass, "h-10 w-20")}
+            className={cn(fieldClass, "w-20")}
           >
             {quantities.map((value) => (
               <option key={value} value={value}>
@@ -82,7 +82,7 @@ export function AddToCart({
           <p
             className={cn(
               "text-[13px] leading-5",
-              "text-ink/70",
+              message.kind === "error" ? "text-sale" : "text-muted",
             )}
           >
             {message.text}

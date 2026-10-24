@@ -96,7 +96,7 @@ export default async function CheckoutPage() {
             ]}
           />
           <h1 className={cn(pageTitleClass, "mt-8")}>Checkout</h1>
-          <p className="mt-3 max-w-[60ch] text-[13px] leading-5 text-ink/55">
+          <p className="mt-3 max-w-[60ch] text-[13px] leading-5 text-muted">
             Every price below is recalculated on the server when you place the
             order. Payment is simulated for this demo.
           </p>
@@ -106,10 +106,10 @@ export default async function CheckoutPage() {
       <Container className="py-8 lg:py-12">
         {items.length === 0 ? (
           <div className="border-t border-rule py-16 text-center">
-            <p className="text-[16px] leading-6 text-ink">
+            <p className="text-[17px] leading-6 text-ink">
               Your cart is empty.
             </p>
-            <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-ink/55">
+            <p className="mx-auto mt-2 max-w-[42ch] text-[13px] leading-5 text-muted">
               Add something to the cart before checking out.
             </p>
             <Link href="/" className={`${primaryButtonClass} mt-6`}>
@@ -151,21 +151,21 @@ export default async function CheckoutPage() {
                           className={cn(
                             "border p-4 text-left transition-colors",
                             selected
-                              ? "border-ink bg-surface"
-                              : "border-rule hover:border-ink/40",
+                              ? "border-accent bg-surface"
+                              : "border-control hover:border-muted",
                           )}
                         >
-                          <span className="block text-[14px] leading-5 text-ink">
+                          <span className="block text-[15px] leading-5 text-ink">
                             {option.title}
                           </span>
-                          <span className="mt-1 block text-[13px] leading-5 text-ink/55">
+                          <span className="mt-1 block text-[13px] leading-5 text-muted">
                             {option.copy}
                           </span>
                         </button>
                       );
                     })}
                   </div>
-                  <p className="mt-3 text-[13px] leading-5 text-ink/45">
+                  <p className="mt-3 text-[13px] leading-5 text-muted">
                     {shippingRuleCopy()}
                   </p>
                 </form>
@@ -177,14 +177,14 @@ export default async function CheckoutPage() {
                 </h2>
 
                 {addresses.length > 0 ? (
-                  <p className="mt-3 text-[13px] leading-5 text-ink/55">
+                  <p className="mt-3 text-[13px] leading-5 text-muted">
                     Choose one of your saved addresses below, or add another.
                   </p>
                 ) : null}
 
                 <div className="mt-5">
                   <details open={addresses.length === 0}>
-                    <summary className="cursor-pointer text-[13px] leading-5 text-ink/65 underline decoration-rule underline-offset-4 hover:decoration-ink">
+                    <summary className="cursor-pointer text-[13px] leading-5 text-muted underline decoration-rule underline-offset-4 hover:decoration-ink">
                       {addresses.length === 0
                         ? "Add a delivery address"
                         : "Add a new address"}
@@ -224,26 +224,26 @@ export default async function CheckoutPage() {
                         <p className="mt-1 text-[13px] leading-5 text-ink">
                           {item.variant.product.title}
                         </p>
-                        <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                        <p className="mt-1 text-[13px] leading-4 text-muted">
                           {item.variant.title} · Qty {item.quantity}
                         </p>
                       </div>
-                      <p className="shrink-0 text-[13px] tabular-nums text-ink/70">
+                      <p className="shrink-0 text-[13px] tabular-nums text-muted">
                         {formatPrice(item.variant.priceCents * item.quantity)}
                       </p>
                     </li>
                   ))}
                 </ul>
 
-                <dl className="mt-5 flex flex-col gap-3 text-[14px] leading-5">
+                <dl className="mt-5 flex flex-col gap-3 text-[15px] leading-5">
                   <div className="flex items-baseline justify-between gap-4">
-                    <dt className="text-ink/60">Subtotal</dt>
+                    <dt className="text-muted">Subtotal</dt>
                     <dd className="tabular-nums text-ink">
                       {formatPrice(totals.subtotalCents)}
                     </dd>
                   </div>
                   <div className="flex items-baseline justify-between gap-4">
-                    <dt className="text-ink/60">
+                    <dt className="text-muted">
                       Shipping ({deliveryMethod === "EXPRESS" ? "Express" : "Standard"})
                     </dt>
                     <dd className="tabular-nums text-ink">
@@ -255,13 +255,13 @@ export default async function CheckoutPage() {
                 </dl>
 
                 <div className="mt-5 flex items-baseline justify-between gap-4 border-t border-rule pt-5">
-                  <span className="text-[14px] text-ink">Total</span>
-                  <span className="text-[20px] leading-7 tabular-nums text-ink">
+                  <span className="text-[15px] text-ink">Total</span>
+                  <span className="text-[22px] leading-7 tabular-nums text-ink">
                     {formatPrice(totals.totalCents)}
                   </span>
                 </div>
 
-                <p className="mt-4 text-[13px] leading-5 text-ink/50">
+                <p className="mt-4 text-[13px] leading-5 text-muted">
                   Totals are recalculated from the catalogue at checkout. The
                   amount shown here is the amount the server will charge.
                 </p>

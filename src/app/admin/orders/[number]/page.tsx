@@ -170,7 +170,7 @@ export default async function AdminOrderPage({
     <div>
       <Link
         href="/admin/orders"
-        className={cn("text-[13px] text-ink/55", textLinkClass)}
+        className={cn("text-[13px] text-muted", textLinkClass)}
       >
         Back to orders
       </Link>
@@ -179,11 +179,11 @@ export default async function AdminOrderPage({
         <div>
           <p className={eyebrowClass}>Order</p>
           <h1 className={cn(pageTitleClass, "mt-2")}>{order.number}</h1>
-          <p className="mt-3 text-[13px] leading-5 text-ink/55">
+          <p className="mt-3 text-[13px] leading-5 text-muted">
             {order.user.email} · placed {formatOrderDate(order.createdAt)}
           </p>
         </div>
-        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/60">
+        <span className="inline-flex border border-rule px-3 py-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
           {orderStatusLabel(order.status)}
         </span>
       </div>
@@ -191,22 +191,22 @@ export default async function AdminOrderPage({
       {error !== null ? (
         <p
           role="alert"
-          className="mt-6 border-l-2 border-accent pl-3 text-[13px] leading-5 text-accent"
+          className="mt-6 border-l-2 border-sale pl-3 text-[13px] leading-5 text-sale"
         >
           {error}
         </p>
       ) : null}
       {updated !== null ? (
-        <p className="mt-6 border-l-2 border-rule pl-3 text-[13px] leading-5 text-ink/60">
+        <p className="mt-6 border-l-2 border-rule pl-3 text-[13px] leading-5 text-muted">
           Status updated to {orderStatusLabel(updated)}.
         </p>
       ) : null}
 
-      <section className="mt-8 border border-rule p-4">
+      <section className="mt-8 border-t border-rule pt-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <p className={labelClass}>Actions</p>
           {targets.length === 0 ? (
-            <p className="text-[13px] leading-5 text-ink/55">
+            <p className="text-[13px] leading-5 text-muted">
               No admin actions for this status.
             </p>
           ) : (
@@ -230,7 +230,7 @@ export default async function AdminOrderPage({
             </div>
           )}
         </div>
-        <p className="mt-3 text-[12px] leading-4 text-ink/45">
+        <p className="mt-3 text-[13px] leading-4 text-muted">
           Only transitions from the order state machine are accepted. Cancelling
           a pending order restores its reserved stock. Every change writes an
           audit row.
@@ -245,17 +245,17 @@ export default async function AdminOrderPage({
             <table className="w-full min-w-[560px] border-collapse text-left">
               <caption className="sr-only">Items in this order</caption>
               <thead>
-                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
-                  <th scope="col" className="py-3 pr-4 font-medium">
+                <tr className="border-b border-rule text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
+                  <th scope="col" className="py-2 pr-4 font-medium">
                     Item
                   </th>
-                  <th scope="col" className="py-3 pr-4 text-right font-medium">
+                  <th scope="col" className="py-2 pr-4 text-right font-medium">
                     Qty
                   </th>
-                  <th scope="col" className="py-3 pr-4 text-right font-medium">
+                  <th scope="col" className="py-2 pr-4 text-right font-medium">
                     Unit
                   </th>
-                  <th scope="col" className="py-3 text-right font-medium">
+                  <th scope="col" className="py-2 text-right font-medium">
                     Total
                   </th>
                 </tr>
@@ -263,21 +263,21 @@ export default async function AdminOrderPage({
               <tbody>
                 {order.items.map((item) => (
                   <tr key={item.id} className="border-b border-rule">
-                    <td className="py-4 pr-4">
-                      <p className="text-[14px] leading-5 text-ink">
+                    <td className="py-2.5 pr-4">
+                      <p className="text-[15px] leading-5 text-ink">
                         {item.nameSnapshot}
                       </p>
-                      <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                      <p className="mt-1 text-[13px] leading-4 text-muted">
                         {item.sku}
                       </p>
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/70">
+                    <td className="py-2.5 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {item.quantity}
                     </td>
-                    <td className="py-4 pr-4 text-right text-[13px] tabular-nums text-ink/70">
+                    <td className="py-2.5 pr-4 text-right text-[13px] tabular-nums text-muted">
                       {formatPrice(item.unitPriceCents)}
                     </td>
-                    <td className="py-4 text-right text-[13px] tabular-nums text-ink">
+                    <td className="py-2.5 text-right text-[13px] tabular-nums text-ink">
                       {formatPrice(item.unitPriceCents * item.quantity)}
                     </td>
                   </tr>
@@ -286,15 +286,15 @@ export default async function AdminOrderPage({
             </table>
           </div>
 
-          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[14px] leading-5">
+          <dl className="mt-6 ml-auto flex max-w-[320px] flex-col gap-3 text-[15px] leading-5">
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">Subtotal</dt>
+              <dt className="text-muted">Subtotal</dt>
               <dd className="tabular-nums text-ink">
                 {formatPrice(order.subtotalCents)}
               </dd>
             </div>
             <div className="flex items-baseline justify-between gap-4">
-              <dt className="text-ink/60">Shipping</dt>
+              <dt className="text-muted">Shipping</dt>
               <dd className="tabular-nums text-ink">
                 {order.shippingCents === 0
                   ? "Free"
@@ -303,7 +303,7 @@ export default async function AdminOrderPage({
             </div>
             <div className="flex items-baseline justify-between gap-4 border-t border-rule pt-3">
               <dt className="text-ink">Total</dt>
-              <dd className="text-[18px] tabular-nums text-ink">
+              <dd className="text-[17px] tabular-nums text-ink">
                 {formatPrice(order.totalCents)}
               </dd>
             </div>
@@ -314,12 +314,12 @@ export default async function AdminOrderPage({
           <h2 className={sectionTitleClass}>Delivery address</h2>
           <div className="mt-5 border-t border-rule pt-5">
             {address === null ? (
-              <p className="text-[13px] leading-5 text-ink/55">
+              <p className="text-[13px] leading-5 text-muted">
                 The address for this order is not available.
               </p>
             ) : (
-              <address className="not-italic text-[14px] leading-6 text-ink/70">
-                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/45">
+              <address className="not-italic text-[15px] leading-6 text-muted">
+                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   {address.label}
                 </p>
                 <p className="mt-2">{address.line1}</p>
@@ -337,15 +337,15 @@ export default async function AdminOrderPage({
             {history.map((entry) => (
               <li
                 key={entry.key}
-                className="border-b border-rule py-3 text-[13px] leading-5"
+                className="border-b border-rule py-2 text-[13px] leading-5"
               >
                 <div className="flex items-baseline justify-between gap-4">
-                  <span className="text-ink/70">{entry.label}</span>
-                  <span className="shrink-0 text-[12px] leading-4 text-ink/45">
+                  <span className="text-muted">{entry.label}</span>
+                  <span className="shrink-0 text-[13px] leading-4 text-muted">
                     {entry.at === null ? "Recorded" : formatOrderDate(entry.at)}
                   </span>
                 </div>
-                <p className="mt-1 text-[12px] leading-4 text-ink/45">
+                <p className="mt-1 text-[13px] leading-4 text-muted">
                   {entry.detail}
                   {entry.actor !== null ? ` · ${entry.actor}` : ""}
                 </p>

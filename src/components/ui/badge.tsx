@@ -4,14 +4,14 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors",
+  "inline-flex items-center border px-2 py-0.5 text-[11px] font-medium uppercase leading-4 tracking-[0.14em]",
   {
     variants: {
       variant: {
-        default: "border-transparent bg-primary text-primary-foreground",
-        secondary: "border-transparent bg-secondary text-secondary-foreground",
-        outline: "text-foreground",
-        destructive: "border-transparent bg-destructive text-white",
+        default: "border-transparent bg-ink text-surface",
+        secondary: "border-transparent bg-surface text-ink",
+        outline: "border-ink text-ink",
+        destructive: "border-transparent bg-sale text-accent-ink",
       },
     },
     defaultVariants: {

@@ -21,7 +21,7 @@ export function Gallery({
 
   return (
     <div>
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface">
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface-strong">
         {selected !== undefined ? (
           <Image
             src={selected.url}
@@ -32,7 +32,7 @@ export function Gallery({
             className="object-contain"
           />
         ) : (
-          <div className="flex h-full items-center justify-center px-6 text-center text-[13px] text-ink/40">
+          <div className="flex h-full items-center justify-center px-6 text-center text-[13px] text-muted">
             Image unavailable for {title}
           </div>
         )}
@@ -48,8 +48,10 @@ export function Gallery({
               aria-label={`View image ${index + 1} of ${images.length}`}
               aria-pressed={index === selectedIndex}
               className={cn(
-                "relative aspect-[4/5] overflow-hidden border bg-surface",
-                index === selectedIndex ? "border-ink" : "border-rule",
+                "relative aspect-square overflow-hidden bg-surface-strong transition-colors",
+                index === selectedIndex
+                  ? "border-2 border-accent"
+                  : "border border-transparent hover:border-rule",
                 focusRing,
               )}
             >

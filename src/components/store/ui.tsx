@@ -30,7 +30,7 @@ export interface BreadcrumbItem {
 export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
   return (
     <nav aria-label="Breadcrumb">
-      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/50">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-medium uppercase leading-4 tracking-[0.14em] text-muted">
         {items.map((item, index) => {
           const isLast = index === items.length - 1;
           return (
@@ -38,20 +38,20 @@ export function Breadcrumbs({ items }: { items: BreadcrumbItem[] }) {
               {item.href !== undefined && !isLast ? (
                 <Link
                   href={item.href}
-                  className="transition-colors hover:text-ink"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center transition-colors hover:text-ink hover:underline hover:underline-offset-4"
                 >
                   {item.label}
                 </Link>
               ) : (
                 <span
                   aria-current={isLast ? "page" : undefined}
-                  className={isLast ? "text-ink/70" : undefined}
+                  className={isLast ? "text-ink" : undefined}
                 >
                   {item.label}
                 </span>
               )}
               {!isLast ? (
-                <span aria-hidden="true" className="text-ink/30">
+                <span aria-hidden="true" className="text-muted">
                   /
                 </span>
               ) : null}

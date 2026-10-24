@@ -57,7 +57,7 @@ export default async function AccountPage() {
   return (
     <div>
       <h1 className={pageTitleClass}>Welcome back, {firstName(user.name)}</h1>
-      <p className="mt-3 text-[13px] leading-5 text-ink/55">{user.email}</p>
+      <p className="mt-3 text-[13px] leading-5 text-muted">{user.email}</p>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-12 lg:gap-16">
         <section className="lg:col-span-7">
@@ -65,7 +65,7 @@ export default async function AccountPage() {
             <h2 className={sectionTitleClass}>Recent orders</h2>
             <Link
               href="/account/orders"
-              className={cn("text-[13px] text-ink/60", textLinkClass)}
+              className={cn("text-[13px] text-muted", textLinkClass)}
             >
               View all orders
             </Link>
@@ -73,7 +73,7 @@ export default async function AccountPage() {
 
           {orders.length === 0 ? (
             <div className="mt-5 border-t border-rule py-10">
-              <p className="text-[14px] leading-5 text-ink">
+              <p className="text-[15px] leading-5 text-ink">
                 You have not placed an order yet.
               </p>
               <Link href="/" className={`${primaryButtonClass} mt-5`}>
@@ -86,21 +86,21 @@ export default async function AccountPage() {
                 <li key={order.number} className="border-b border-rule">
                   <Link
                     href={`/account/orders/${order.number}`}
-                    className="grid gap-2 py-4 transition-colors hover:bg-ink/[0.02] sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-4 sm:px-2"
+                    className="grid gap-2 py-4 transition-colors hover:bg-surface sm:grid-cols-[1fr_auto] sm:items-baseline sm:gap-4 sm:px-2"
                   >
                     <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                      <span className="text-[14px] leading-5 text-ink">
+                      <span className="text-[15px] leading-5 text-ink">
                         {order.number}
                       </span>
-                      <span className="text-[12px] leading-5 text-ink/45">
+                      <span className="text-[13px] leading-5 text-muted">
                         {formatOrderDate(order.createdAt)}
                       </span>
                     </span>
                     <span className="flex items-baseline justify-between gap-4 sm:justify-end">
-                      <span className="text-[11px] uppercase leading-4 tracking-[0.12em] text-ink/50">
+                      <span className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                         {orderStatusLabel(order.status)}
                       </span>
-                      <span className="w-24 text-right text-[14px] leading-5 tabular-nums text-ink">
+                      <span className="w-24 text-right text-[15px] leading-5 tabular-nums text-ink">
                         {formatPrice(order.totalCents)}
                       </span>
                     </span>
@@ -116,7 +116,7 @@ export default async function AccountPage() {
             <h2 className={sectionTitleClass}>Default address</h2>
             <Link
               href="/account/addresses"
-              className={cn("text-[13px] text-ink/60", textLinkClass)}
+              className={cn("text-[13px] text-muted", textLinkClass)}
             >
               Manage addresses
             </Link>
@@ -125,7 +125,7 @@ export default async function AccountPage() {
           <div className="mt-5 border-t border-rule pt-5">
             {defaultAddress === null ? (
               <>
-                <p className="text-[14px] leading-5 text-ink/70">
+                <p className="text-[15px] leading-5 text-muted">
                   No default address yet. Add one so checkout has somewhere to
                   ship your order.
                 </p>
@@ -134,8 +134,8 @@ export default async function AccountPage() {
                 </Link>
               </>
             ) : (
-              <address className="not-italic text-[14px] leading-6 text-ink/70">
-                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-ink/45">
+              <address className="not-italic text-[15px] leading-6 text-muted">
+                <p className="text-[11px] uppercase leading-4 tracking-[0.14em] text-muted">
                   {defaultAddress.label}
                 </p>
                 <p className="mt-2">{defaultAddress.line1}</p>
@@ -153,13 +153,13 @@ export default async function AccountPage() {
           <nav aria-label="Account links" className="mt-10 flex flex-col gap-3 border-t border-rule pt-5">
             <Link
               href="/account/orders"
-              className={cn("text-[13px] text-ink/70", textLinkClass)}
+              className={cn("text-[13px] text-muted", textLinkClass)}
             >
               Order history
             </Link>
             <Link
               href="/account/addresses"
-              className={cn("text-[13px] text-ink/70", textLinkClass)}
+              className={cn("text-[13px] text-muted", textLinkClass)}
             >
               Delivery addresses
             </Link>

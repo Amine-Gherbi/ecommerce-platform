@@ -7,7 +7,7 @@ export type CardProps = HTMLAttributes<HTMLDivElement> & { className?: string };
 export function Card({ className, ...props }: CardProps) {
   return (
     <div
-      className={cn("rounded-xl border bg-card text-card-foreground shadow-sm", className)}
+      className={cn("border border-rule bg-card text-card-foreground", className)}
       {...props}
     />
   );
@@ -18,11 +18,11 @@ export function CardHeader({ className, ...props }: CardProps) {
 }
 
 export function CardTitle({ className, ...props }: HTMLAttributes<HTMLHeadingElement> & { className?: string }) {
-  return <h2 className={cn("font-semibold leading-none", className)} {...props} />;
+  return <h2 className={cn("font-medium leading-none", className)} {...props} />;
 }
 
 export function CardDescription({ className, ...props }: HTMLAttributes<HTMLParagraphElement> & { className?: string }) {
-  return <p className={cn("text-sm text-muted-foreground", className)} {...props} />;
+  return <p className={cn("text-sm text-muted", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }: CardProps) {
