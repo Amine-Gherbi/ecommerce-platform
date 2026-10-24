@@ -21,7 +21,7 @@ export function Gallery({
 
   return (
     <div>
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-strong">
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface">
         {selected !== undefined ? (
           <Image
             src={selected.url}
@@ -29,7 +29,7 @@ export function Gallery({
             fill
             priority
             sizes="(max-width: 1023px) 100vw, 55vw"
-            className="object-contain"
+            className="object-contain p-4 lg:p-6"
           />
         ) : (
           <div className="flex h-full items-center justify-center px-6 text-center text-[13px] text-muted">
@@ -48,7 +48,7 @@ export function Gallery({
               aria-label={`View image ${index + 1} of ${images.length}`}
               aria-pressed={index === selectedIndex}
               className={cn(
-                "relative aspect-square overflow-hidden bg-surface-strong transition-colors",
+                "relative aspect-square overflow-hidden bg-surface transition-colors",
                 index === selectedIndex
                   ? "border-2 border-accent"
                   : "border border-transparent hover:border-rule",
@@ -60,7 +60,7 @@ export function Gallery({
                 alt=""
                 fill
                 sizes="96px"
-                className="object-cover"
+                className="object-contain p-2"
               />
             </button>
           ))}
