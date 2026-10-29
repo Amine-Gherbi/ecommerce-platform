@@ -46,8 +46,27 @@ bugs — `psql` and an empty `shop_test` — both fixed and recorded in
 | Load numbers live in `docs/load/checkout.md` | [`docs/load/checkout.md`](load/checkout.md), produced by `k6 run load/checkout.js` |
 | p95 4.58 s, 248/250, 750 HTTP requests | raw k6 summary in `docs/load/checkout.md`; database counts in the same file |
 | Stripe sandbox PaymentIntents created server-side | `src/lib/stripe.ts`; `src/lib/checkout.ts:280-286`; `grep -r 'from "stripe"' src` → `src/lib/stripe.ts` |
-| No live URL | no deployment exists; `git remote -v` is empty; nothing in this repo names a host |
+| Live store on Render against Neon | <https://kestrel-store.onrender.com> — `/api/health` 200, `/` serves the seeded catalogue; service `kestrel-store` (`srv-dbhnvqu1egvs7382giog`) built from this repository's `Dockerfile` |
 | CI green on `master` | run 40081391256 (2026-10-24); `.github/workflows/ci.yml` |
+
+## Live deployment
+
+| Item | Value |
+| --- | --- |
+| Public URL | <https://kestrel-store.onrender.com> |
+| Render service | `kestrel-store` (`srv-dbhnvqu1egvs7382giog`), free plan, frankfurt, Docker from this repository |
+| Database | Neon `neondb`, PostgreSQL 16.15, `sslmode=require` |
+| Stripe webhook endpoint | `we_1UVwxfAFU9sk1cqL0URqmape` → `https://kestrel-store.onrender.com/api/webhooks/payments`, events `payment_intent.succeeded`, `payment_intent.payment_failed` |
+| Paid order | `KST-2610-53808809` |
+| PaymentIntent | `pi_3UVxhPAFU9sk1cqL2t0HAlmV`, `succeeded`, `14900` EUR cents |
+| Server-computed total | `14900` cents — the cart, the shipping rule and the database agree |
+| Webhook delivery | `evt_3UVxhPAFU9sk1cqL2drQF1uP`, processed once (`WebhookEvent` row, `processedAt` set) |
+| Replay | replaying that exact signed event twice answers `200 {"action":"duplicate"}` both times and writes no second row |
+| Reproduce | `BASE_URL=https://kestrel-store.onrender.com node scripts/live-payment-proof.mjs` with `DATABASE_URL`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` exported |
+
+The checkout page mounts the Stripe Payment Element, so the deployed build carries a
+`pk_test_…` publishable key; the intent is created by the server after the totals are
+recomputed, and the order leaves `PENDING` only when a Stripe-signed delivery arrives.
 
 ## Visual identity (P2-R10-theme)
 
@@ -230,9 +249,9 @@ Test counts and coverage are gate results, not performance claims.
   code that polls a payment provider for a webhook that never arrives. The only
   expiry mechanism is the reservation sweeper, which cancels an unpaid
   `PENDING` order after 30 minutes.
-- **No live payment proof in this repository.** The Stripe call is exercised
-  against the sandbox, and the test suites inject a PaymentIntent creator so
-  they never reach the network. No test claims a live card charge, and the
-  sandbox keys live outside the tree.
-- **No deployment, but CI now runs.** The store is a local demo; the workflow is
-  green on `master` (run 40081391256). See the Gate section.
+- **The live payment is one order, not a load test.** One hosted checkout was
+  paid with the Stripe test card and the rest of the evidence is that single
+  order; the k6 numbers in `docs/load/checkout.md` are a local measurement and
+  say so. The sandbox keys live outside the tree.
+- **CI is green on `master`** (run 40081391256) and the deployment is built from
+  the same commit. See the Gate section and "Live deployment" above.

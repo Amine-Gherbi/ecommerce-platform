@@ -18,7 +18,7 @@ Numbers: [`docs/load/checkout.md`](docs/load/checkout.md) and [`docs/PROOF.md`](
 
 ## Stack
 
-Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Stripe sandbox · Vitest · Playwright · k6. The server creates every PaymentIntent from its own totals; the browser collects the card with the Payment Element and the webhook verifies Stripe's signature with the SDK. There is no live URL.
+Next.js 15 App Router (RSC) · TypeScript strict · Tailwind 4 + shadcn primitives · PostgreSQL 16 + Prisma 6 · Auth.js v5 (JWT) · Stripe sandbox · Vitest · Playwright · k6. The server creates every PaymentIntent from its own totals; the browser collects the card with the Payment Element and the webhook verifies Stripe's signature with the SDK. Running at <https://kestrel-store.onrender.com> against Neon; the sandbox card `4242 4242 4242 4242` completes a checkout end to end.
 
 ## What is proved
 
