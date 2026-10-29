@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { beforeEach, describe, expect, it } from "vitest";
 
 import { POST } from "@/app/api/webhooks/payments/route";
+import { hasExpiredReservation } from "@/lib/payments-webhook";
 
 import {
   createPendingOrder,
@@ -67,5 +68,34 @@ describe("webhook read-path expiry enforcement", () => {
     expect(replay.status).toBe(200);
     expect(await replay.json()).toMatchObject({ action: "illegal_transition" });
     expect(await testDb.webhookEvent.count()).toBe(2);
+  });
+
+  // Regression: `expiresAt` is a naive timestamp written by Prisma as UTC
+  // wall-clock. Comparing it against a bare `now()` makes Postgres reinterpret
+  // it in the session timezone, so a hold with 30 minutes left looked expired
+  // on a UTC+1 session. Each case sets the timezone transaction-locally, so it
+  // is guaranteed to be the one the predicate runs under.
+  it("is independent of the session timezone", async () => {
+    const { order } = await createPendingOrder({ stock: 5 });
+
+    const expiredIn = async (timeZone: string): Promise<boolean> =>
+      testDb.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT set_config('TimeZone', ${timeZone}, true)`;
+        return hasExpiredReservation(tx, order.id);
+      });
+
+    // Fresh hold, ~30 minutes still on the clock: not expired anywhere.
+    await expect(expiredIn("Africa/Lagos")).resolves.toBe(false);
+    await expect(expiredIn("UTC")).resolves.toBe(false);
+
+    // Advance the reservation clock on purpose, then the same predicate must
+    // refuse it in every session timezone.
+    await testDb.stockReservation.updateMany({
+      where: { orderId: order.id },
+      data: { expiresAt: new Date(Date.now() - 60_000) },
+    });
+
+    await expect(expiredIn("Africa/Lagos")).resolves.toBe(true);
+    await expect(expiredIn("UTC")).resolves.toBe(true);
   });
 });

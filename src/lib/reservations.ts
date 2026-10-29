@@ -52,6 +52,9 @@ export async function sweepExpiredReservations(
   now: Date = new Date(),
 ): Promise<SweepResult> {
   return db.$transaction(async (tx): Promise<SweepResult> => {
+    // `expiresAt` is a naive timestamp; Prisma binds this Date in the same UTC
+    // wall-clock representation checkout wrote, so the comparison is
+    // independent of the database session timezone.
     const expired = await tx.stockReservation.findMany({
       where: {
         releasedAt: null,
