@@ -46,7 +46,7 @@ describe("webhook signature and transitions", () => {
     expect(unsigned.status).toBe(400);
 
     const wrongSecret = await POST(
-      signedRequest(rawBody, { secret: "whsec_wrong" }),
+      signedRequest(rawBody, { secret: "test-wrong-webhook-secret" }),
     );
     expect(wrongSecret.status).toBe(400);
 

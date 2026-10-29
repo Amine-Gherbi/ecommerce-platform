@@ -5,7 +5,7 @@
 //   unsigned/wrong signature -> 400 and no event row
 //
 //   BASE_URL=http://localhost:3200 \
-//   STRIPE_WEBHOOK_SECRET=whsec_... \
+//   STRIPE_WEBHOOK_SECRET=<the signing secret from the Stripe endpoint> \
 //   node scripts/webhook-proof.mjs
 
 import { randomUUID } from "node:crypto";
@@ -149,7 +149,7 @@ async function main() {
   const wrongBody = eventFor(mismatched.order, `evt_${randomUUID()}`);
   const wronglySigned = await postWebhook(
     wrongBody,
-    signedHeaders(wrongBody, "whsec_wrong"),
+    signedHeaders(wrongBody, "test-wrong-webhook-secret"),
   );
   const wrongEvent = JSON.parse(wrongBody).id;
 

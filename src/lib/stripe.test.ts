@@ -88,8 +88,8 @@ describe("secret configuration", () => {
     vi.stubEnv("STRIPE_SECRET_KEY", "   ");
     expect(stripeSecretKey()).toBeNull();
 
-    vi.stubEnv("STRIPE_SECRET_KEY", "sk_test_value");
-    expect(stripeSecretKey()).toBe("sk_test_value");
+    vi.stubEnv("STRIPE_SECRET_KEY", "sk_mock_not_a_real_key");
+    expect(stripeSecretKey()).toBe("sk_mock_not_a_real_key");
   });
 
   it("treats a missing or blank webhook secret as unconfigured", () => {
@@ -99,8 +99,18 @@ describe("secret configuration", () => {
     vi.stubEnv("STRIPE_WEBHOOK_SECRET", "  ");
     expect(webhookSecret()).toBeNull();
 
-    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "whsec_test_value");
-    expect(webhookSecret()).toBe("whsec_test_value");
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "test-canonical-webhook-secret");
+    expect(webhookSecret()).toBe("test-canonical-webhook-secret");
+  });
+
+  it("falls back to PAYMENTS_WEBHOOK_SECRET when the Stripe name is unset", () => {
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "");
+    vi.stubEnv("PAYMENTS_WEBHOOK_SECRET", "test-render-generated-webhook-secret");
+
+    expect(webhookSecret()).toBe("test-render-generated-webhook-secret");
+
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "test-canonical-webhook-secret");
+    expect(webhookSecret()).toBe("test-canonical-webhook-secret");
   });
 });
 
@@ -111,7 +121,7 @@ describe("constructStripeEvent", () => {
     type: "payment_intent.succeeded",
     data: { object: { id: "pi_test", object: "payment_intent" } },
   });
-  const secret = "whsec_test_value";
+  const secret = "test-canonical-webhook-secret";
 
   it("accepts a header produced by the SDK and returns the parsed event", () => {
     const header = Stripe.webhooks.generateTestHeaderString({ payload, secret });
@@ -124,7 +134,7 @@ describe("constructStripeEvent", () => {
   it("rejects a header signed with another secret", () => {
     const header = Stripe.webhooks.generateTestHeaderString({
       payload,
-      secret: "whsec_other",
+      secret: "test-other-webhook-secret",
     });
 
     expect(() => constructStripeEvent(payload, header, secret)).toThrow();

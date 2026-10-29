@@ -35,6 +35,10 @@ function parseSeed(argv: string[]): number {
   return 42;
 }
 
+function hasFlag(argv: string[], flag: string): boolean {
+  return argv.includes(flag);
+}
+
 interface CategorySeed {
   slug: string;
   name: string;
@@ -790,6 +794,27 @@ async function main(): Promise<void> {
   const seed = parseSeed(process.argv);
   if (!Number.isInteger(seed) || seed < 0) {
     throw new Error(`--seed must be a non-negative integer, got ${String(seed)}`);
+  }
+
+  // The release command runs on every deploy (and, on the free plan, on every
+  // cold start). `--if-empty` (and NODE_ENV=production, so a forgotten flag
+  // cannot wipe a live database) makes the seed a no-op once rows exist. The
+  // destructive TRUNCATE below is therefore a development-only path.
+  const idempotent =
+    hasFlag(process.argv, "--if-empty") ||
+    process.env.NODE_ENV === "production";
+
+  if (idempotent) {
+    const [products, users] = await Promise.all([
+      prisma.product.count(),
+      prisma.user.count(),
+    ]);
+    if (products > 0 || users > 0) {
+      console.log(
+        `seed=${seed} skipped=1 reason=already-populated products=${products} users=${users}`,
+      );
+      return;
+    }
   }
 
   for (const product of PRODUCTS) {

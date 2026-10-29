@@ -12,7 +12,7 @@ import {
   type PlaceOrderResult,
 } from "@/lib/checkout";
 
-export const WEBHOOK_SECRET = "whsec_test_payments_webhook_secret";
+export const WEBHOOK_SECRET = "test-payments-webhook-secret-not-a-real-value";
 
 // Integration tests inject a PaymentIntent creator: pricing, transaction
 // boundaries and the persisted id are real, Stripe is not called.

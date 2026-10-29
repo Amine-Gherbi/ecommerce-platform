@@ -36,7 +36,13 @@ export function stripeSecretKey(): string | null {
 }
 
 export function webhookSecret(): string | null {
-  return nonEmpty(process.env.STRIPE_WEBHOOK_SECRET);
+  // The card and Render blueprint call this PAYMENTS_WEBHOOK_SECRET; the
+  // application's original name is STRIPE_WEBHOOK_SECRET. Accept either so a
+  // generated blueprint value is never silently ignored.
+  return (
+    nonEmpty(process.env.STRIPE_WEBHOOK_SECRET) ??
+    nonEmpty(process.env.PAYMENTS_WEBHOOK_SECRET)
+  );
 }
 
 function nonEmpty(value: string | undefined): string | null {

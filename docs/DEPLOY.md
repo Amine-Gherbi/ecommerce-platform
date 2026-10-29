@@ -1,127 +1,197 @@
-# Deploying on a Node host
+# Deploying the storefront
 
-There is no deployment in this repository. Nothing below has been executed
-against a public host, no URL is claimed, and no platform config (Dockerfile,
-fly.toml, Procfile) exists. These are the steps a Node host would need, written
-against the code in this tree on 2026-10-23.
+The deploy artefacts are in this repository; **no Render service has been
+created and no public URL is claimed**. W1-c creates the service and records
+the URL, the order number and the PaymentIntent id in [`PROOF.md`](PROOF.md).
+This document describes the image, the blueprint and the release step those
+artefacts produce.
 
-## What the host must provide
+## The image
 
-| Requirement | Why |
+`Dockerfile` is a three-stage build on `node:22-alpine`:
+
+| Stage | What it does |
 | --- | --- |
-| Node 22 or newer | `package.json:5-7` (`engines.node >= 22`); the run in this repo used Node 22.23.4 |
-| PostgreSQL 16 reachable over TCP | `prisma/schema.prisma:11-14`; the Conditional stock `UPDATE` and `CHECK (stock >= 0)` rely on PostgreSQL semantics |
-| Build space for `next build` + ~200 MB `node_modules` | Next 15 production build |
-| No C++ toolchain | passwords use `@node-rs/argon2`, which ships prebuilt binaries (`CLAUDE.md` "Pitfalls") |
+| `deps` | `npm ci` from the lockfile, including the build and release tooling |
+| `builder` | `prisma generate`, then `next build` with `output: "standalone"` |
+| `runner` | `server.js` + the traced `node_modules`, `public/`, `.next/static`, the Prisma schema/migrations/seed, and a release-only Prisma CLI + `tsx` |
 
-## Environment
+The container:
 
-| Variable | Production | Effect if absent |
+- runs as `nextjs`, uid **1001** (`docker run --rm store:w1b id`);
+- sets `NODE_ENV=production`;
+- answers `GET /api/health` without a session. The route runs `SELECT 1`, so a
+  container whose database is unreachable is unhealthy, not merely listening;
+- starts through `docker-entrypoint.sh`, which runs the release step once per
+  container start (see below) and then `exec`s `node server.js`;
+- exposes `HEALTHCHECK` every 30 s against the same route.
+
+The build needs **no database**. `src/app/layout.tsx` sets
+`dynamic = "force-dynamic"`, so every page is rendered per request rather than
+prerendered: the header reads the live category list, and the home page shows
+live prices and stock. `next build` therefore succeeds on a build host with no
+`DATABASE_URL`, and the image never contains catalogue HTML captured at build
+time. The cost is a server render per request; for a store whose stock changes
+under it, that is the correct trade. The release step runs migrations after the
+image exists, so a fresh Neon database cannot deadlock the first build.
+
+Build it with the publishable key as a **build argument**:
+
+```bash
+docker build \
+  --build-arg NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<publishable-key> \
+  -t store:w1b .
+```
+
+`NEXT_PUBLIC_*` is not a runtime setting. Next inlines the value while
+`next build` compiles `src/app/checkout/checkout-form.tsx`; the browser bundle
+that mounts the Payment Element contains the literal from build time. A
+container started with the key only in its runtime environment serves a
+checkout page whose Payment Element never mounts. Changing the key requires a
+new image. Confirm the inlining before shipping:
+
+```bash
+docker run --rm --entrypoint sh store:w1b -c \
+  "grep -rl '<the same key>' .next/static .next/server | head"
+```
+
+Render translates a Docker service's environment variables into Docker build
+arguments automatically. `render.yaml` therefore declares
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` (with `sync: false`) and the Dockerfile
+declares the matching `ARG`; the value reaches the build without being
+committed. Do not declare an `ARG` for `STRIPE_SECRET_KEY`, `DATABASE_URL` or
+any other secret: Render would pass it into the image.
+
+## The release step
+
+`npm run release` is:
+
+```bash
+prisma migrate deploy && prisma db seed -- --seed 42 --if-empty
+```
+
+It is **idempotent by design**:
+
+- `prisma migrate deploy` applies only the migrations in
+  `prisma/migrations/` that the database has not recorded. It does not use
+  `db push`; the drift check in `npm run verify` is the guard against a schema
+  that no migration describes.
+- The seed is non-destructive when `--if-empty` is set **or**
+  `NODE_ENV=production`. Once a product or user row exists it prints
+  `seed=42 skipped=1 reason=already-populated …` and exits 0. Without that
+  guard the seed's `TRUNCATE … RESTART IDENTITY CASCADE` would erase orders,
+  which invariant 7 forbids.
+
+The Prisma CLI is a devDependency and is not in the standalone trace, so the
+runner installs a self-contained copy under `/opt/release` and links `prisma`
+and `tsx` into `/app/node_modules`. The seed therefore runs in the runtime
+layer with no build stage and no network access beyond the database.
+
+Prove the idempotency on a scratch database:
+
+```bash
+createdb shop_release_check
+DATABASE_URL=postgresql://postgres@localhost:5433/shop_release_check \
+  npx prisma migrate deploy
+DATABASE_URL=postgresql://postgres@localhost:5433/shop_release_check \
+  npm run release
+DATABASE_URL=postgresql://postgres@localhost:5433/shop_release_check \
+  npm run release          # prints skipped=1, exit 0
+```
+
+Compare `count(*)` for `Product`, `Variant`, `User`, `Order` after each run;
+the numbers do not change on the second run. The same command can be run
+inside the image (the image has `prisma`, `tsx`, the seed and `public/`):
+
+```bash
+docker run --rm -e DATABASE_URL=<scratch-url> store:w1b npm run release
+```
+
+### Why the entrypoint, not `preDeployCommand`
+
+Render's [deploy documentation](https://render.com/docs/deploys#pre-deploy-command)
+states that the pre-deploy command is available for **paid** web services,
+private services and background workers. The blueprint targets the free plan,
+so `render.yaml` does not set `preDeployCommand`; the image's entrypoint runs
+`npm run release` before `node server.js`. That is safe on every cold start
+because both halves are idempotent. If the service is later moved to a paid
+plan, add `preDeployCommand: npm run release` and set
+`SKIP_RELEASE_ON_START` (or remove the entrypoint call) to avoid running it
+twice.
+
+## The Render blueprint
+
+`render.yaml` defines one free Docker web service:
+
+| Setting | Value | Why |
 | --- | --- | --- |
-| `DATABASE_URL` | required | Prisma cannot connect; `prisma.config.ts:15` falls back to the local `shop_dev` URL, which will not exist on a host |
-| `AUTH_SECRET` (or `NEXTAUTH_SECRET`) | required | `src/auth.ts:16-21` resolves to `undefined` when `NODE_ENV=production`; Auth.js throws instead of signing a session |
-| `STRIPE_SECRET_KEY` | required | `src/lib/stripe.ts:72-79` throws before a PaymentIntent is created; checkout answers 500 and no order is written |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | required | the checkout page can create the order but shows no card form, because the Payment Element never mounts (`src/app/checkout/checkout-form.tsx`) |
-| `STRIPE_WEBHOOK_SECRET` | required | `src/lib/stripe.ts:38-40` returns `null`; the webhook route answers 503 to every delivery (`src/app/api/webhooks/payments/route.ts:16-25`) |
-| `SWEEPER_SECRET` | required | `src/app/api/internal/sweep-reservations/route.ts:10-21` answers 503 in production when unset, so expired reservations are never released |
-| `TEST_DATABASE_URL` | not used at runtime | Only Vitest/Playwright read it (`tests/setup-env.ts`, `playwright.config.ts:7-9`) |
-| `PORT` | optional | `next start` honours it; default 3000 |
+| `name` | `kestrel-store` | the service the W1-c card deploys |
+| `runtime` | `docker` | the image above |
+| `healthCheckPath` | `/api/health` | unauthenticated, database-backed |
+| `autoDeployTrigger` | `off` | deploys are explicit; the demo lane depends on it |
+| `plan` | `free` | the only plan this project uses |
+| `DATABASE_URL` | `sync: false` | the Neon pooled string is pasted in the dashboard, never committed |
+| `AUTH_SECRET` | `generateValue: true` | Render generates the JWT signing secret |
+| `PAYMENTS_WEBHOOK_SECRET` | `generateValue: true` | the card's name for the payment webhook secret; see below |
+| `SWEEPER_SECRET` | `generateValue: true` | the scheduled workflow's shared secret |
+| `STRIPE_SECRET_KEY` | `sync: false` | server-side key, pasted in the dashboard |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | `sync: false` | public, but needed at **build** time (above) |
 
-Generate the Auth.js secret separately, e.g.
-`node -e "console.log(crypto.randomBytes(32).toString('base64'))"`. The local
-default in `src/auth.ts:21` is a development-only string and must never reach a
-production process. The three Stripe values come from the sandbox dashboard:
-the API keys from *Developers → API keys*, and the webhook secret from the
-endpoint you create for the host.
+The application's original variable name is `STRIPE_WEBHOOK_SECRET`
+(`src/lib/stripe.ts`). It accepts `PAYMENTS_WEBHOOK_SECRET` as an alias, which
+is why the blueprint can use the card's name. **The generated value is a
+placeholder, not a Stripe signing secret:** in W1-c, replace it with the
+"Signing secret" shown for the endpoint
+`https://<store>/api/webhooks/payments`, otherwise every delivery is rejected
+(fail closed, 503/400). `SWEEPER_SECRET` must be copied to the
+`SWEEPER_SECRET` GitHub Actions secret so the scheduled workflow can call the
+endpoint.
 
-## Build and start
+`DATABASE_URL` is a Neon **pooled** connection string ending in
+`?sslmode=require`. The database lives on Neon, not on Render: Render's free
+Postgres expires after 30 days.
 
-```bash
-npm ci
-npx prisma generate
-npx prisma migrate deploy
-npm run build
-npm start
-```
+### Free-plan behaviour that affects measurements
 
-`migrate deploy` applies the four committed migrations in
-`prisma/migrations/`, including the `CHECK ("stock" >= 0)` constraint
-(`20261023152658_rebuild`) and `Order.paymentIntentId` plus its unique index
-(`20261023191000_checkout_payment`). Do not substitute `prisma db push` on a
-production database: it reconciles the schema without writing migration
-history, so the next `migrate deploy` has no record of what has run. The test
-database is the one place `db push` is deliberate (see below).
+- The service spins down after 15 minutes idle and takes about a minute to
+  wake. Warm it with a request before Lighthouse, k6 or any smoke measurement,
+  and say "free instance, cold start ~60 s" in the write-up.
+- Four services are planned against 750 free instance hours per month; do not
+  add a keep-alive pinger.
+- The pre-deploy command and cron jobs are not part of the free plan. The
+  entrypoint is the release step; the sweeper runs from GitHub Actions (see
+  [`OPERATIONS.md`](OPERATIONS.md)).
 
-## Seed
+## Scheduled sweeper
 
-```bash
-npx prisma db seed -- --seed 42
-```
-
-**This is destructive.** `prisma/seed.ts:802-804` runs
-`TRUNCATE … RESTART IDENTITY CASCADE` over every table before inserting the
-catalogue and the two demo users. Run it only on a database you intend to
-replace, i.e. a demo host. The demo accounts it creates are
-`demo@kestrel.test` / `demo-password-123` and
-`admin@kestrel.test` / `admin-password-123` (`prisma/seed.ts:906-933`).
+`POST /api/internal/sweep-reservations` remains authenticated by
+`x-sweeper-secret`. Because Render cron jobs are not available on the free
+plan, `.github/workflows/sweep-reservations.yml` calls it hourly. The cadence
+arithmetic and the read-path expiry guarantee are in
+[`OPERATIONS.md`](OPERATIONS.md#scheduled-trigger).
 
 ## Verify on the host
 
-`npm run verify` is the same gate as CI:
-ESLint, `tsc --noEmit`, Vitest with coverage, `prisma migrate diff
---exit-code`, Playwright. It needs more than a running app:
+`npm run verify` is the same gate as CI: ESLint, `tsc --noEmit`, Vitest with
+coverage, `prisma migrate diff --exit-code`, Playwright. It needs:
 
 - a second database, `shop_test`, named by `TEST_DATABASE_URL`
-  (default `postgresql://postgres@localhost:5433/shop_test`)
-- Playwright's browser: `npx playwright install chromium`
-- port 3100 free: Playwright starts its own `next dev` there
-  (`playwright.config.ts:10`, `:28-38`)
+  (default `postgresql://postgres@localhost:5433/shop_test`);
+- Playwright's Chromium (`npx playwright install chromium`);
+- port 3100 free: Playwright starts its own `next dev` there.
 
 `shop_test` carries no migration history, so the E2E global setup uses
-`prisma db push` and then reseeds (`tests/e2e/global-setup.ts:31-32`). That is
-intentional; `migrate deploy` against `shop_test` fails.
-
-## Scheduled jobs
-
-The only periodic job is the reservation sweeper. Run it every minute:
-
-```bash
-curl -fsS -X POST https://<host>/api/internal/sweep-reservations \
-  -H "x-sweeper-secret: $SWEEPER_SECRET"
-```
-
-It cancels `PENDING` orders whose reservations expired (30 minutes after
-checkout) and restores their stock exactly once
-(`src/lib/reservations.ts:51-90`). It is safe to call concurrently: the
-`releasedAt IS NULL` compare-and-set decides which caller restores units.
-
-There is no reconciliation job. Nothing polls a payment provider for a webhook
-that never arrives; an unpaid order simply expires through the sweeper. If the
-provider does deliver late, after the sweep, the event finds a `CANCELLED`
-order and is answered 200 `illegal_transition` — it does not resurrect the
-order (`src/lib/payments-webhook.ts:135-141`).
-
-## Webhook endpoint
-
-`POST /api/webhooks/payments`, body verified with
-`Stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`.
-Stripe sends the signature in `stripe-signature`. The route reads the raw text
-before parsing (`src/app/api/webhooks/payments/route.ts:15`) and answers 400
-only for a missing or wrong signature; an unconfigured secret answers 503;
-every other outcome is 200 so Stripe stops retrying (`:27-48`).
-
-Checkout creates the PaymentIntent after it has repriced the cart and after the
-conditional stock decrement, inside the transaction that inserts the order. A
-Stripe failure rolls the stock back, so there is no order without an intent
-(`src/lib/checkout.ts:273-331`). The Stripe request reuses the checkout
-idempotency key, and `metadata.orderId` / `metadata.orderNumber` tie the intent
-to the row.
+`prisma db push` and then reseeds. That is intentional; `migrate deploy`
+against `shop_test` fails. The pre-deploy check against a real environment is
+`npm run release` (above), and the container's `/api/health` must answer 200.
 
 ## What this document does not cover
 
-- TLS, reverse proxy, process supervision and log shipping: host-specific and
-  not present in the repository.
-- Horizontal scaling. The sign-in rate limiter is in-process
-  (`src/lib/rate-limit.ts`), so two instances each allow five failures per
-  email + IP per minute rather than five in total.
-- Backup and restore. Not implemented here.
+- Creating the Render service, pasting the Neon and Stripe values, and
+  pointing the Stripe webhook at the deployed URL: W1-c.
+- TLS, reverse proxying and log shipping: Render provides the first; the last
+  two are not configured here.
+- Horizontal scaling. Sign-in rate limiting is in-process
+  (`src/lib/rate-limit.ts`); the release step assumes one instance at a time.
+- Backup and restore. Take a `pg_dump` before the first `migrate deploy` on a
+  database that holds anything you care about.

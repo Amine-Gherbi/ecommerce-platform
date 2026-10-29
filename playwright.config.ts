@@ -47,7 +47,7 @@ export default defineConfig({
         DATABASE_URL: TEST_DATABASE_URL,
         AUTH_SECRET: "p2-e2e-secret-not-for-production",
         NODE_ENV: "development",
-        STRIPE_SECRET_KEY: "sk_test_e2e_mock",
+        STRIPE_SECRET_KEY: "sk_mock_e2e_not_a_real_key",
         STRIPE_API_HOST: MOCK_STRIPE_URL,
         // No publishable key: Stripe.js is not loaded from the network, so the
         // spec stops at the order-created state and follows the order link.

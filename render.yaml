@@ -1,0 +1,51 @@
+# Render Blueprint for the storefront.
+#
+# One free Docker web service. The image's entrypoint is the release step
+# (`prisma migrate deploy` + the idempotent seed) because Render documents
+# `preDeployCommand` as paid-only, and this service is on the free plan.
+#
+# Build-time note: Render translates a Docker service's environment variables
+# into Docker build arguments automatically. The Dockerfile declares
+#   ARG NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+# so the value below (sync: false, pasted once in the dashboard) reaches
+# `next build` and is inlined into the client bundle. A runtime-only value
+# produces a checkout page whose Payment Element cannot mount. Rebuild after
+# changing it. No other declared ARG may hold a secret.
+services:
+  - type: web
+    name: kestrel-store
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /api/health
+    # Explicit deploys only: the demo lane depends on a deploy happening when
+    # it is asked for, not when a push lands.
+    autoDeployTrigger: "off"
+    envVars:
+      # Neon pooled connection string. Pasted in the dashboard; never committed.
+      - key: DATABASE_URL
+        sync: false
+
+      - key: AUTH_SECRET
+        generateValue: true
+
+      # The application accepts this name as an alias for STRIPE_WEBHOOK_SECRET
+      # (src/lib/stripe.ts). Render generates a placeholder so the service can
+      # boot; W1-c replaces it with the signing secret shown for the Stripe
+      # endpoint. A mismatched value rejects every delivery (fail closed).
+      - key: PAYMENTS_WEBHOOK_SECRET
+        generateValue: true
+
+      - key: SWEEPER_SECRET
+        generateValue: true
+
+      # Server-side Stripe key. Never a build argument: only the publishable
+      # key is inlined.
+      - key: STRIPE_SECRET_KEY
+        sync: false
+
+      # Public by design, but it must be present at build time (see above).
+      - key: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
+        sync: false
