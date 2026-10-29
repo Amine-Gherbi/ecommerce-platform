@@ -24,10 +24,10 @@ idempotencyKey])`, `Variant.stock` with `CHECK (stock >= 0)`,
 `StockReservation` and `WebhookEvent.eventId` unique. M4 wires behaviour to
 those constraints instead of adding read-then-write guards in application code.
 
-Payments are **simulated** in this build. There is no Stripe SDK call: checkout
-writes `pi_demo_<hex>` as the PaymentIntent id (`src/lib/checkout.ts:279`), and
-the webhook is called by whatever simulates the provider. This ADR describes
-what the code does, not a live integration.
+Payments run through Stripe's sandbox. ADR 0005 records that migration; this
+ADR keeps the checkout, reservation and webhook state machine it inherited.
+The PaymentIntent id is created by Stripe, not generated locally. The sections
+below describe the code that still holds those invariants.
 
 ## Decision
 
@@ -35,7 +35,7 @@ what the code does, not a live integration.
 
 `Cart` has no version column. Instead the server exposes
 `cartVersion = sha256(canonical lines)`, where a line is `variantId:quantity`,
-sorted by `variantId` (`src/lib/checkout.ts:77-84`). The checkout page echoes
+sorted by `variantId` (`src/lib/checkout.ts:79-101`). The checkout page echoes
 that hash back.
 
 Consequences:
@@ -44,13 +44,13 @@ Consequences:
   double submit derive the same idempotency key.
 - Adding, removing or re-quantifying a line changes the version, so a stale
   preview cannot silently check out a different basket; the server answers 409
-  `CART_CHANGED` (`src/lib/checkout.ts:204-206`).
+  `CART_CHANGED` (`src/lib/checkout.ts:216-221`).
 - Prices are deliberately **not** in the hash. The server prices the order from
   `Variant.priceCents` at commit time; a client that has not refreshed after a
   price change is still charged the authoritative amount.
 - An archived product is not filtered out of the version check. It stays in the
   basket, the version matches, and checkout then rejects the line because the
-  product is no longer `ACTIVE` (`:222-226`), again as `CART_CHANGED`.
+  product is no longer `ACTIVE` (`:239-243`), again as `CART_CHANGED`.
 
 ### 2. The unique index decides the double submit
 
@@ -58,30 +58,30 @@ Consequences:
 idempotencyKey = sha256(cart.id + ':' + cartVersion)
 ```
 
-(`src/lib/checkout.ts:133-135`.) `Order.@@unique([userId, idempotencyKey])` is
+(`src/lib/checkout.ts:150-152`.) `Order.@@unique([userId, idempotencyKey])` is
 the arbiter. Both concurrent requests attempt the insert; Postgres blocks the
 second on the index until the first commits, then raises `23505` (Prisma
 `P2002`). The loser does **not** return 409: it re-reads the winner's order and
-answers 200 with the same body (`src/lib/checkout.ts:304-323`;
-`src/app/api/checkout/route.ts:56-59`). A duplicate checkout is a replay, not a
+answers 200 with the same body (`src/lib/checkout.ts:341-348`;
+`src/app/api/checkout/route.ts:63-66`). A duplicate checkout is a replay, not a
 conflict.
 
-There is also a pre-check inside the transaction (`:170-176`), but it is an
+There is also a pre-check inside the transaction (`:186-192`), but it is an
 optimisation for the sequential case. The unique index is what holds under
 concurrency.
 
 ### 3. Stock is decremented inside the same transaction, in id order
 
 Order creation, stock decrement and reservation insertion share one
-`db.$transaction` (`src/lib/checkout.ts:169-303`):
+`db.$transaction` (`src/lib/checkout.ts:185-332`):
 
 1. Load the cart and its variants; the cart must belong to the caller
-   (`:178-196`).
+   (`:193-211`).
 2. Recompute the version and compare; reject `CART_CHANGED` on mismatch
-   (`:204-206`).
+   (`:216-221`).
 3. Validate that `addressId` is a UUID and belongs to the caller, then snapshot
-   the address onto the order (`:208-217`, `:270-277`).
-4. Price with the pure `computeTotals` function (`:228-233`, `:86-107`). The
+   the address onto the order (`:223-233`, `:297-305`).
+4. Price with the pure `computeTotals` function (`:243-249`, `:103-127`). The
    requested quantity is never silently capped — a line that wants more than
    stock fails rather than charging less.
 5. For each line in **ascending `variantId` order**, run
@@ -92,30 +92,31 @@ Order creation, stock decrement and reservation insertion share one
    ```
 
    A zero-row update throws `OUT_OF_STOCK`, which aborts the transaction
-   (`:235-244`). The lock order is fixed so two multi-line carts cannot
+   (`:252-261`). The lock order is fixed so two multi-line carts cannot
    deadlock.
 6. Insert the `Order`, its `OrderItem` snapshots (`sku`, `nameSnapshot`,
    `unitPriceCents`) and one `StockReservation` per line, with
    `expiresAt = now() + interval '30 minutes'` read from the database clock
-   (`:249-298`).
+   (`:288-327`).
 
 The `CHECK (stock >= 0)` constraint is the backstop if this code is ever
 bypassed (`prisma/migrations/20261023152658_rebuild/migration.sql:283`).
 
-Nothing external happens after commit. The `paymentIntentId` is a generated
-`pi_demo_*` string written in the same insert (`:279`), so there is no
-post-commit window in which an order exists without a payment reference.
+The PaymentIntent is created inside the transaction, after pricing and the
+stock decrement, and its real `pi_…` id is written in the same insert
+(`src/lib/checkout.ts:273-309`). A Stripe failure throws and rolls the stock
+back, so there is no order without an intent and no post-commit window.
 
 ### 4. Webhook: the event row and the side effect commit together
 
 Every delivery first inserts `WebhookEvent` inside the same transaction as the
-state change (`src/lib/payments-webhook.ts:112-119`). A redelivery violates the
+state change (`src/lib/payments-webhook.ts:86-93`). A redelivery violates the
 unique `eventId`, rolls back before any side effect, and the handler returns
-`{action: "duplicate"}`; the route answers 200 (`:213-218`).
+`{action: "duplicate"}`; the route answers 200 (`:187-190`).
 
-The order is found by `paymentIntentId` (`:142-150`). An event for an unknown
+The order is found by `paymentIntentId` (`:119-135`). An event for an unknown
 intent, an unsupported type, or a missing PaymentIntent id is recorded and
-answered 200 `ignored` (`:121-159`).
+answered 200 `ignored` (`:95-133`).
 
 Transitions are compare-and-set:
 
@@ -125,8 +126,8 @@ WHERE id = $id AND status = 'PENDING'
 ```
 
 A non-`PENDING` order is rejected before the update and logged as
-`illegal_transition` (`:161-167`). A lost race on the compare-and-set is the
-same answer (`:204-209`). Both are 200 because the provider retries non-2xx and
+`illegal_transition` (`:135-141`). A lost race on the compare-and-set is the
+same answer (`:178-183`). Both are 200 because the provider retries non-2xx and
 no amount of retrying can make an illegal transition legal.
 
 There is no `CANCELLED → PAID`. If the sweeper has already cancelled an unpaid
@@ -141,13 +142,13 @@ the sale.
 ### 5. Amount mismatch is a refund, never a payment
 
 Before an order may become `PAID`, two facts must agree
-(`src/lib/payments-webhook.ts:169-175`):
+(`src/lib/payments-webhook.ts:143-150`):
 
 - `event.data.amountCents === order.totalCents`
 - `event.data.currency.toLowerCase() === order.currency.toLowerCase()`
 
 Any disagreement moves the order to `REFUND_REQUIRED` with the same
-compare-and-set and releases its stock (`:177-194`). There is no code path that
+compare-and-set and releases its stock (`:151-168`). There is no code path that
 records a mismatched payment as `PAID`; the first test in
 `tests/integration/checkout.amount-mismatch.test.ts` asserts both the status and
 the restored stock.
@@ -155,35 +156,38 @@ the restored stock.
 ### 6. Signature verification precedes every side effect
 
 The route reads `await request.text()` before anything parses JSON
-(`src/app/api/webhooks/payments/route.ts:16`), verifies
-`x-payments-signature: t=<unix>,v1=<hex>` over `` `${t}.${rawBody}` `` with
-`PAYMENTS_WEBHOOK_SECRET` (`src/lib/webhook-signature.ts:13-21`, `:63-90`), and
-only then processes the event. A missing or wrong signature returns 400 and
-touches nothing (`route.ts:28-30`). That is the only 4xx: the caller is not the
-provider, and a retry cannot fix a bad secret.
+(`src/app/api/webhooks/payments/route.ts:15`), then passes the raw body and the
+`stripe-signature` header to
+`Stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`
+(`:27-37`). A missing or wrong signature returns 400 and touches nothing; an
+unconfigured secret returns 503 and also touches nothing. That is the only 4xx:
+the caller is not Stripe, and a retry cannot fix a bad secret.
 
 A body that is correctly signed but not a shape the handler understands is
-answered 200 `ignored` (`:32-38`), so the provider does not retry forever.
+answered 200 `ignored` (`:39-45`), so Stripe does not retry forever.
 
-The MAC covers the timestamp but there is no freshness window; the event id is
-what makes an old captured delivery harmless, because it is a 200 duplicate.
+The SDK enforces a timestamp tolerance on the header. The event id is still what
+makes an old captured delivery harmless, because it is a 200 duplicate.
 
-### 7. No Stripe key is needed or used
+### 7. Stripe owns the PaymentIntent and the signature
 
-There is no `stripe` import under `src/`, and checkout does not call an
-external service. The `stripe` package remains in `package.json` but is
-unreferenced; the PaymentIntent id is `pi_demo_<hex>`. The signature scheme is
-our own, documented in [`../DEPLOY.md`](../DEPLOY.md); it is not
-`Stripe-Signature`.
+Checkout calls `client.paymentIntents.create` with the server total, `eur`,
+`metadata.orderId`, `metadata.orderNumber` and the checkout idempotency key
+(`src/lib/stripe.ts`). The webhook path verifies with
+`Stripe.webhooks.constructEvent`; the state machine above is unchanged.
 
-No test claims a live Stripe path passed.
+The three keys come from the environment — `STRIPE_SECRET_KEY`,
+`NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_WEBHOOK_SECRET` — and none is
+committed. The test suites inject a PaymentIntent creator and sign deliveries
+with `Stripe.webhooks.generateTestHeaderString`, so they exercise the same code
+without an external call. ADR 0005 records the migration.
 
 ### 8. Address handling
 
-Checkout accepts exactly `{addressId, cartVersion}` (`:112-131`). `addressId`
+Checkout accepts exactly `{addressId, cartVersion}` (`:129-148`). `addressId`
 must be a UUID and must resolve to an `Address` owned by the caller
-(`:208-217`). The selected address is copied into `Order.address` as JSON at
-commit time (`:270-277`), so later edits to the address book do not rewrite
+(`:223-233`). The selected address is copied into `Order.address` as JSON at
+commit time (`:297-305`), so later edits to the address book do not rewrite
 order history. A missing, malformed or foreign address returns
 `invalid_address`, mapped to 400 by the route.
 
@@ -202,9 +206,13 @@ order history. A missing, malformed or foreign address returns
 - **Catch stock failure and delete the order.** Deleting inside a transaction
   is what rollback already does; a separate compensation path would be another
   thing to get wrong.
-- **Add Stripe and mock it in tests.** Rejected for this build. A mock would
-  make a green test that proves nothing about the real call; a simulated
-  provider with a real HMAC is honest about what is exercised.
+- **Keep a locally generated PaymentIntent id and our own HMAC.** That was the
+  first build. It proved the state machine but not the provider contract;
+  ADR 0005 replaced it with the sandbox SDK and the SDK verifier.
+- **Mock the Stripe SDK globally in every suite.** Rejected: a global mock can
+  drift from the provider's shape. The checkout suites inject only the
+  PaymentIntent creator, and the webhook suites run the real verifier over
+  headers produced by the SDK's test helper.
 
 ## Consequences
 

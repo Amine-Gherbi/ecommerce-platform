@@ -1,11 +1,33 @@
 import { randomUUID } from "node:crypto";
 
 import { PrismaClient, type DeliveryMethod } from "@prisma/client";
+import Stripe from "stripe";
 
-import { cartVersion, placeOrder, type CheckoutOrder } from "@/lib/checkout";
-import { computeSignature } from "@/lib/webhook-signature";
+import {
+  cartVersion,
+  placeOrder,
+  type CheckoutBody,
+  type CheckoutOrder,
+  type PlaceOrderDeps,
+  type PlaceOrderResult,
+} from "@/lib/checkout";
 
-export const WEBHOOK_SECRET = "test-payments-webhook-secret";
+export const WEBHOOK_SECRET = "whsec_test_payments_webhook_secret";
+
+// Integration tests inject a PaymentIntent creator: pricing, transaction
+// boundaries and the persisted id are real, Stripe is not called.
+export const testPaymentDeps: PlaceOrderDeps = {
+  createPaymentIntent: async () => ({
+    id: `pi_test_${randomUUID().replaceAll("-", "")}`,
+    clientSecret: `pi_test_secret_${randomUUID().replaceAll("-", "")}`,
+  }),
+};
+
+export function placeOrderForTest(
+  body: CheckoutBody & { userId: string },
+): Promise<PlaceOrderResult> {
+  return placeOrder(body, testPaymentDeps);
+}
 
 // Integration tests share one database. `fileParallelism` is off in
 // vitest.config.ts, so each file can reset at its own boundary.
@@ -136,12 +158,15 @@ export function paymentEvent(
 ): string {
   return JSON.stringify({
     id: eventId,
+    object: "event",
     type: "payment_intent.succeeded",
     data: {
-      paymentIntentId: order.paymentIntentId,
-      amountCents: order.totalCents,
-      currency: order.currency,
-      ...overrides,
+      object: {
+        id: overrides.paymentIntentId ?? order.paymentIntentId,
+        object: "payment_intent",
+        amount: overrides.amountCents ?? order.totalCents,
+        currency: overrides.currency ?? order.currency,
+      },
     },
   });
 }
@@ -157,13 +182,18 @@ export function signedRequest(
   const timestamp = options.timestamp ?? Math.floor(Date.now() / 1_000);
   const secret = options.secret ?? WEBHOOK_SECRET;
   const signature =
-    options.signature ?? computeSignature(secret, String(timestamp), rawBody);
+    options.signature ??
+    Stripe.webhooks.generateTestHeaderString({
+      payload: rawBody,
+      secret,
+      timestamp,
+    });
 
   return new Request("http://localhost/api/webhooks/payments", {
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-payments-signature": `t=${timestamp},v1=${signature}`,
+      "stripe-signature": signature,
     },
     body: rawBody,
   });
@@ -185,7 +215,7 @@ export async function createPendingOrder({
 }> {
   const { variantId } = await createVariant({ priceCents, stock });
   const attempt = await createOrderAttempt({ variantId, quantity });
-  const result = await placeOrder(attempt);
+  const result = await placeOrderForTest(attempt);
 
   if (result.kind !== "created") {
     throw new Error(`expected a created order, got ${result.kind}`);

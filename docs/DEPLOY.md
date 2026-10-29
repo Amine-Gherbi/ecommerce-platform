@@ -20,15 +20,19 @@ against the code in this tree on 2026-10-23.
 | --- | --- | --- |
 | `DATABASE_URL` | required | Prisma cannot connect; `prisma.config.ts:15` falls back to the local `shop_dev` URL, which will not exist on a host |
 | `AUTH_SECRET` (or `NEXTAUTH_SECRET`) | required | `src/auth.ts:16-21` resolves to `undefined` when `NODE_ENV=production`; Auth.js throws instead of signing a session |
-| `PAYMENTS_WEBHOOK_SECRET` | required | `src/lib/payments-webhook.ts:33-46` returns `null`; the webhook route answers 503 to every delivery (`src/app/api/webhooks/payments/route.ts:19-24`) |
+| `STRIPE_SECRET_KEY` | required | `src/lib/stripe.ts:72-79` throws before a PaymentIntent is created; checkout answers 500 and no order is written |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | required | the checkout page can create the order but shows no card form, because the Payment Element never mounts (`src/app/checkout/checkout-form.tsx`) |
+| `STRIPE_WEBHOOK_SECRET` | required | `src/lib/stripe.ts:38-40` returns `null`; the webhook route answers 503 to every delivery (`src/app/api/webhooks/payments/route.ts:16-25`) |
 | `SWEEPER_SECRET` | required | `src/app/api/internal/sweep-reservations/route.ts:10-21` answers 503 in production when unset, so expired reservations are never released |
 | `TEST_DATABASE_URL` | not used at runtime | Only Vitest/Playwright read it (`tests/setup-env.ts`, `playwright.config.ts:7-9`) |
 | `PORT` | optional | `next start` honours it; default 3000 |
 
-Generate the two secrets separately, e.g.
+Generate the Auth.js secret separately, e.g.
 `node -e "console.log(crypto.randomBytes(32).toString('base64'))"`. The local
-defaults in `src/auth.ts:21` and `src/lib/payments-webhook.ts:45` are
-development-only strings and must never reach a production process.
+default in `src/auth.ts:21` is a development-only string and must never reach a
+production process. The three Stripe values come from the sandbox dashboard:
+the API keys from *Developers → API keys*, and the webhook secret from the
+endpoint you create for the host.
 
 ## Build and start
 
@@ -95,21 +99,23 @@ There is no reconciliation job. Nothing polls a payment provider for a webhook
 that never arrives; an unpaid order simply expires through the sweeper. If the
 provider does deliver late, after the sweep, the event finds a `CANCELLED`
 order and is answered 200 `illegal_transition` — it does not resurrect the
-order (`src/lib/payments-webhook.ts:161-167`).
+order (`src/lib/payments-webhook.ts:135-141`).
 
 ## Webhook endpoint
 
-`POST /api/webhooks/payments`, body signed with HMAC-SHA256 over
-`` `${t}.${rawBody}` `` and sent as `x-payments-signature: t=<unix>,v1=<hex>`.
-The route reads the raw text before parsing (`src/app/api/webhooks/payments/route.ts:16`)
-and answers 400 only for a missing or wrong signature; every other outcome is
-200 so the provider stops retrying (`:28-41`).
+`POST /api/webhooks/payments`, body verified with
+`Stripe.webhooks.constructEvent(rawBody, signature, STRIPE_WEBHOOK_SECRET)`.
+Stripe sends the signature in `stripe-signature`. The route reads the raw text
+before parsing (`src/app/api/webhooks/payments/route.ts:15`) and answers 400
+only for a missing or wrong signature; an unconfigured secret answers 503;
+every other outcome is 200 so Stripe stops retrying (`:27-48`).
 
-Payments are simulated. Checkout generates `pi_demo_*` ids
-(`src/lib/checkout.ts:279`); the `stripe` package is listed in
-`package.json:37` but nothing under `src/` imports it. There is no Stripe key
-and no live payment is attempted, so the webhook must be called by whatever
-simulates the provider.
+Checkout creates the PaymentIntent after it has repriced the cart and after the
+conditional stock decrement, inside the transaction that inserts the order. A
+Stripe failure rolls the stock back, so there is no order without an intent
+(`src/lib/checkout.ts:273-331`). The Stripe request reuses the checkout
+idempotency key, and `metadata.orderId` / `metadata.orderNumber` tie the intent
+to the row.
 
 ## What this document does not cover
 

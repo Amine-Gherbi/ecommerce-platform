@@ -6,13 +6,13 @@ does.
 
 | # | Invariant | Enforced at | Test file |
 | --- | --- | --- | --- |
-| 1 | Money is integer cents; the client cannot set a price | `src/lib/checkout.ts:86-107` (integer arithmetic), `:112-131` (body has two fields), `:233` (price from `Variant.priceCents`) | `tests/integration/checkout.forged-price.test.ts` |
-| 2 | `OrderItem` snapshots `sku`, `nameSnapshot`, `unitPriceCents`; history survives product edits | `prisma/schema.prisma:187-200`; `src/lib/checkout.ts:280-287` | `tests/integration/admin.products.test.ts:116-159` — "changes the variant price without changing an existing order" |
-| 3 | One order per `(userId, idempotencyKey)`; a duplicate returns that order | `prisma/schema.prisma:163-185` (unique index); `src/lib/checkout.ts:166-176`, `:304-323`; 200 at `src/app/api/checkout/route.ts:56-59` | `tests/integration/checkout.double-submit.test.ts` |
-| 4 | Stock never goes negative; the reservation is written in the same transaction | `src/lib/checkout.ts:169-303`, conditional update `:235-244`; `CHECK ("stock" >= 0)` at `prisma/migrations/20261023152658_rebuild/migration.sql:283` | `tests/integration/checkout.oversell.test.ts` |
-| 5 | A replayed webhook is a 200 no-op | `src/lib/payments-webhook.ts:112-119`, `:214-218`; `src/app/api/webhooks/payments/route.ts:40-41` | `tests/integration/webhook.replay.test.ts` |
-| 6 | An illegal transition is a 200 with a log; `PAID` is never downgraded | `src/lib/payments-webhook.ts:161-167`, `:204-209` | `tests/integration/webhook.transitions.test.ts` |
-| 7 | An amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID` | `src/lib/payments-webhook.ts:169-194` | `tests/integration/checkout.amount-mismatch.test.ts` |
+| 1 | Money is integer cents; the client cannot set a price | `src/lib/checkout.ts:103-127` (integer arithmetic), `:129-148` (body has two fields), `:246` (price from `Variant.priceCents`) | `tests/integration/checkout.forged-price.test.ts` |
+| 2 | `OrderItem` snapshots `sku`, `nameSnapshot`, `unitPriceCents`; history survives product edits | `prisma/schema.prisma:187-200`; `src/lib/checkout.ts:312-314` | `tests/integration/admin.products.test.ts:116-159` — "changes the variant price without changing an existing order" |
+| 3 | One order per `(userId, idempotencyKey)`; a duplicate returns that order | `prisma/schema.prisma:163-185` (unique index); `src/lib/checkout.ts:150-152`, `:186-192`, `:341-348`; 200 at `src/app/api/checkout/route.ts:63-66` | `tests/integration/checkout.double-submit.test.ts` |
+| 4 | Stock never goes negative; the reservation is written in the same transaction | `src/lib/checkout.ts:185-332`, conditional update `:252-261`; `CHECK ("stock" >= 0)` at `prisma/migrations/20261023152658_rebuild/migration.sql:283` | `tests/integration/checkout.oversell.test.ts` |
+| 5 | A replayed webhook is a 200 no-op | `src/lib/payments-webhook.ts:86-93`, `:187-190`; `src/app/api/webhooks/payments/route.ts:47-48` | `tests/integration/webhook.replay.test.ts` |
+| 6 | An illegal transition is a 200 with a log; `PAID` is never downgraded | `src/lib/payments-webhook.ts:135-141`, `:178-183` | `tests/integration/webhook.transitions.test.ts` |
+| 7 | An amount or currency mismatch becomes `REFUND_REQUIRED`, never `PAID` | `src/lib/payments-webhook.ts:143-168` | `tests/integration/checkout.amount-mismatch.test.ts` |
 | 8 | Admin archive hides a product without touching order history | `src/lib/admin-products.ts:427-467`; `ProductStatus` at `prisma/schema.prisma:21-25` | `tests/integration/admin.products.test.ts:161-215` — "archives without touching the order and restores on request" |
 
 Invariants 2 and 8 share a file because the same suite covers both sides of
@@ -36,7 +36,7 @@ npx vitest run \
 
 | # | Mutation that must turn the test red |
 | --- | --- |
-| 1 | Make `parseCheckoutBody` copy `totalCents` from the body and `placeOrder` use it instead of `computeTotals` (`src/lib/checkout.ts:112`, `:233`). |
+| 1 | Make `parseCheckoutBody` copy `totalCents` from the body and `placeOrder` use it instead of `computeTotals` (`src/lib/checkout.ts:129`, `:249`). |
 | 2 | Replace the `OrderItem` snapshot fields with a join to the live `Variant`/`Product` price. |
 | 3 | Drop `@@unique([userId, idempotencyKey])` from `Order`, or return 409 instead of the existing order on `P2002`. |
 | 4 | Replace the conditional `UPDATE … WHERE stock >= qty` with a read-then-write, or move the reservation insert outside the transaction. |

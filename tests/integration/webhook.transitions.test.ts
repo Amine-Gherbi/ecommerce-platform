@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { POST } from "@/app/api/webhooks/payments/route";
 
@@ -10,19 +10,30 @@ import {
   resetDatabase,
   signedRequest,
   testDb,
-  WEBHOOK_SECRET,
 } from "./helpers";
 
 beforeEach(async () => {
   await resetDatabase();
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe("webhook signature and transitions", () => {
   it("rejects an unsigned or wrongly signed body with 400 and writes no event", async () => {
     const rawBody = JSON.stringify({
       id: `evt_${randomUUID()}`,
+      object: "event",
       type: "payment_intent.succeeded",
-      data: { paymentIntentId: "pi_demo_missing", amountCents: 1, currency: "eur" },
+      data: {
+        object: {
+          id: "pi_test_missing",
+          object: "payment_intent",
+          amount: 1_000,
+          currency: "eur",
+        },
+      },
     });
 
     const unsigned = await POST(
@@ -34,21 +45,44 @@ describe("webhook signature and transitions", () => {
     );
     expect(unsigned.status).toBe(400);
 
-    const wrongSecret = await POST(signedRequest(rawBody, { secret: "whsec_wrong" }));
+    const wrongSecret = await POST(
+      signedRequest(rawBody, { secret: "whsec_wrong" }),
+    );
     expect(wrongSecret.status).toBe(400);
 
     expect(await testDb.webhookEvent.count()).toBe(0);
-    expect(WEBHOOK_SECRET).not.toBe("whsec_wrong");
+  });
+
+  it("rejects every delivery when the webhook secret is not configured", async () => {
+    const { order } = await createPendingOrder();
+    const rawBody = paymentEvent(order, `evt_${randomUUID()}`);
+    const request = signedRequest(rawBody);
+
+    vi.stubEnv("STRIPE_WEBHOOK_SECRET", "");
+
+    const response = await POST(request);
+    expect(response.status).toBe(503);
+    expect(await testDb.webhookEvent.count()).toBe(0);
+    expect(
+      await testDb.order.findUniqueOrThrow({
+        where: { id: order.id },
+        select: { status: true },
+      }),
+    ).toEqual({ status: "PENDING" });
   });
 
   it("records an event for an unknown payment intent and answers 200", async () => {
     const rawBody = JSON.stringify({
       id: `evt_${randomUUID()}`,
+      object: "event",
       type: "payment_intent.succeeded",
       data: {
-        paymentIntentId: `pi_demo_${randomUUID()}`,
-        amountCents: 1_000,
-        currency: "eur",
+        object: {
+          id: `pi_test_${randomUUID()}`,
+          object: "payment_intent",
+          amount: 1_000,
+          currency: "eur",
+        },
       },
     });
 

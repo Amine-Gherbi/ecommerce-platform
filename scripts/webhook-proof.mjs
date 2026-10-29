@@ -5,10 +5,12 @@
 //   unsigned/wrong signature -> 400 and no event row
 //
 //   BASE_URL=http://localhost:3200 \
-//   PAYMENTS_WEBHOOK_SECRET=test-payments-webhook-secret \
+//   STRIPE_WEBHOOK_SECRET=whsec_... \
 //   node scripts/webhook-proof.mjs
 
-import { createHmac, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
+
+import Stripe from "stripe";
 
 import {
   checkout,
@@ -19,20 +21,18 @@ import {
 } from "./lib/demo-fixtures.mjs";
 
 const baseUrl = process.env.BASE_URL ?? "http://localhost:3200";
-const secret =
-  process.env.PAYMENTS_WEBHOOK_SECRET ?? "test-payments-webhook-secret";
-
-function sign(timestamp, rawBody) {
-  return createHmac("sha256", secret)
-    .update(`${timestamp}.${rawBody}`)
-    .digest("hex");
+const secret = process.env.STRIPE_WEBHOOK_SECRET;
+if (secret === undefined || secret.length === 0) {
+  throw new Error("STRIPE_WEBHOOK_SECRET must be set");
 }
 
-function signedHeaders(rawBody) {
-  const timestamp = Math.floor(Date.now() / 1_000);
+function signedHeaders(rawBody, signingSecret = secret) {
   return {
     "content-type": "application/json",
-    "x-payments-signature": `t=${timestamp},v1=${sign(timestamp, rawBody)}`,
+    "stripe-signature": Stripe.webhooks.generateTestHeaderString({
+      payload: rawBody,
+      secret: signingSecret,
+    }),
   };
 }
 
@@ -54,12 +54,16 @@ async function postWebhook(rawBody, headers) {
 function eventFor(order, eventId, overrides = {}) {
   return JSON.stringify({
     id: eventId,
+    object: "event",
     type: "payment_intent.succeeded",
     data: {
-      paymentIntentId: order.paymentIntentId,
-      amountCents: order.totalCents,
-      currency: order.currency,
-      ...overrides,
+      object: {
+        id: order.paymentIntentId,
+        object: "payment_intent",
+        amount: order.totalCents,
+        currency: order.currency,
+        ...overrides,
+      },
     },
   });
 }
@@ -119,7 +123,7 @@ async function main() {
   const mismatched = await placeOrder("mismatch");
   const mismatchEventId = `evt_${randomUUID()}`;
   const mismatchBody = eventFor(mismatched.order, mismatchEventId, {
-    amountCents: mismatched.order.totalCents + 1,
+    amount: mismatched.order.totalCents + 1,
   });
   const mismatch = await postWebhook(mismatchBody, signedHeaders(mismatchBody));
   const [statusAfterMismatch, mismatchPaidAt] = orderState(mismatched.order.id);
@@ -137,20 +141,16 @@ async function main() {
 
   // 4. Unsigned and wrongly signed bodies.
   const unsignedBody = eventFor(mismatched.order, `evt_${randomUUID()}`, {
-    amountCents: mismatched.order.totalCents,
+    amount: mismatched.order.totalCents,
   });
   const unsigned = await postWebhook(unsignedBody, { "content-type": "application/json" });
   const unsignedEvent = JSON.parse(unsignedBody).id;
 
   const wrongBody = eventFor(mismatched.order, `evt_${randomUUID()}`);
-  const wrongTimestamp = Math.floor(Date.now() / 1_000);
-  const wrongSecret = createHmac("sha256", "whsec_wrong")
-    .update(`${wrongTimestamp}.${wrongBody}`)
-    .digest("hex");
-  const wronglySigned = await postWebhook(wrongBody, {
-    "content-type": "application/json",
-    "x-payments-signature": `t=${wrongTimestamp},v1=${wrongSecret}`,
-  });
+  const wronglySigned = await postWebhook(
+    wrongBody,
+    signedHeaders(wrongBody, "whsec_wrong"),
+  );
   const wrongEvent = JSON.parse(wrongBody).id;
 
   console.log(

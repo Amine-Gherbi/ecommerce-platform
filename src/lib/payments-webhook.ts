@@ -1,8 +1,9 @@
-// Payments are simulated. A signed `payment_intent.succeeded` event is the only
-// thing allowed to move an order from PENDING to PAID, and the event row is
-// inserted in the same transaction as the state change so a replay is a no-op.
+// Stripe's `payment_intent.succeeded` event is the only thing allowed to move
+// an order from PENDING to PAID, and the event row is inserted in the same
+// transaction as the state change so a replay is a no-op.
 
 import type { Prisma } from "@prisma/client";
+import type Stripe from "stripe";
 
 import { db } from "@/lib/db";
 import { releaseReservationsForOrder } from "@/lib/reservations";
@@ -30,56 +31,29 @@ export interface WebhookResult {
 
 const SUPPORTED_TYPE = "payment_intent.succeeded";
 
-export function paymentsWebhookSecret(): string | null {
-  const configured = process.env.PAYMENTS_WEBHOOK_SECRET;
-  if (configured !== undefined && configured.length > 0) {
-    return configured;
+// `constructEvent` has already verified the signature and parsed the snapshot;
+// this only lifts the PaymentIntent fields the state machine compares.
+export function parsePaymentsEvent(event: Stripe.Event): PaymentsEvent | null {
+  if (typeof event.id !== "string" || event.id.length === 0) {
+    return null;
   }
-
-  // Local development and tests run without extra configuration. Production
-  // must provide the secret or the route refuses to process anything.
-  if (process.env.NODE_ENV === "production") {
+  if (typeof event.type !== "string" || event.type.length === 0) {
     return null;
   }
 
-  return "p2-local-payments-webhook-secret";
-}
-
-export function parsePaymentsEvent(rawBody: string): PaymentsEvent | null {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(rawBody);
-  } catch {
-    return null;
+  const object: unknown = event.data?.object;
+  if (typeof object !== "object" || object === null) {
+    return { id: event.id, type: event.type, data: {} };
   }
 
-  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
-    return null;
-  }
-
-  const record = parsed as Record<string, unknown>;
-  const id = record.id;
-  const type = record.type;
-  if (typeof id !== "string" || id.length === 0) {
-    return null;
-  }
-  if (typeof type !== "string" || type.length === 0) {
-    return null;
-  }
-
-  const rawData = record.data;
-  const data =
-    typeof rawData === "object" && rawData !== null && !Array.isArray(rawData)
-      ? (rawData as Record<string, unknown>)
-      : {};
-
+  const record = object as Record<string, unknown>;
   return {
-    id,
-    type,
+    id: event.id,
+    type: event.type,
     data: {
-      paymentIntentId: data.paymentIntentId,
-      amountCents: data.amountCents,
-      currency: data.currency,
+      paymentIntentId: record.id,
+      amountCents: record.amount,
+      currency: record.currency,
     },
   };
 }

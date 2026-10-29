@@ -43,24 +43,26 @@ Concurrency: two overlapping sweeps are safe for the same reason. The order
 cancel is a compare-and-set and each reservation release is one too, so the
 second caller counts zero. Expiry uses the passed `now` (default
 `new Date()`) compared against `expiresAt`, which checkout set from the
-database clock (`src/lib/checkout.ts:249-255`). If the app clock drifts from the
+database clock (`src/lib/checkout.ts:263-271`). If the app clock drifts from the
 database clock, the transfer window shifts by that drift.
 
 What it does not do: it does not contact a payment provider, refund money, or
 revive a cancelled order. A payment that arrives after the sweep finds a
 `CANCELLED` order and is answered 200 `illegal_transition`
-(`src/lib/payments-webhook.ts:161-167`); the money side is out of scope for this
+(`src/lib/payments-webhook.ts:135-141`); the money side is out of scope for this
 build.
 
 ## Payment webhook
 
 `POST /api/webhooks/payments` (`src/app/api/webhooks/payments/route.ts`). The
-provider is simulated; see [`DEPLOY.md`](DEPLOY.md) for the signature format.
+provider is Stripe in sandbox mode; the route verifies the `stripe-signature`
+header with `Stripe.webhooks.constructEvent` against `STRIPE_WEBHOOK_SECRET`.
+See [`DEPLOY.md`](DEPLOY.md) for the endpoint contract.
 
 Every delivery inserts a `WebhookEvent` row first, inside the same transaction
-as any state change (`src/lib/payments-webhook.ts:112-119`). The unique
+as any state change (`src/lib/payments-webhook.ts:86-93`). The unique
 `eventId` is the replay arbiter: a redelivery rolls back before any side effect
-and the route answers 200 `{action: "duplicate"}` (`:213-218`). Log lines worth
+and the route answers 200 `{action: "duplicate"}` (`:187-190`). Log lines worth
 alerting on:
 
 | Log | Meaning |
@@ -71,9 +73,11 @@ alerting on:
 | `[payments-webhook] amount mismatch …` | order moved to `REFUND_REQUIRED` and stock returned |
 | `[reservation-sweeper] order=… was settled before it could be cancelled` | the webhook won the race; expected occasionally |
 
-An unhandled database error is not caught: the request returns 500 and the
-provider retries. That is intentional, and it is the one non-200 path. A bad
-signature is the only 400 (`src/app/api/webhooks/payments/route.ts:28-30`).
+An unhandled database error is not caught: the request returns 500 and Stripe
+retries. That is intentional, and it is the one non-200 path after verification.
+A bad signature is the only 400
+(`src/app/api/webhooks/payments/route.ts:27-37`); an unconfigured secret is a
+503 and rejects the delivery before any state change (`:16-25`).
 
 ## What does not exist
 

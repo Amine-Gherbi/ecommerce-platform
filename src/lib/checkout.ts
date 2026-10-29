@@ -3,12 +3,17 @@
 // in the same order), and lets the `(userId, idempotencyKey)` unique index
 // decide a double submit.
 
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 
 import type { DeliveryMethod, Prisma } from "@prisma/client";
 
 import { db } from "@/lib/db";
 import { shippingForSubtotal } from "@/lib/money";
+import {
+  createPaymentIntent as createStripePaymentIntent,
+  type CreatedPaymentIntent,
+  type PaymentIntentRequest,
+} from "@/lib/stripe";
 
 export interface CartLineKey {
   variantId: string;
@@ -30,12 +35,24 @@ export type CheckoutOrder = Prisma.OrderGetPayload<{
 }>;
 
 export type PlaceOrderResult =
-  | { kind: "created"; order: CheckoutOrder }
+  | { kind: "created"; order: CheckoutOrder; clientSecret: string | null }
   | { kind: "duplicate"; order: CheckoutOrder }
   | { kind: "cart_changed" }
   | { kind: "no_cart" }
   | { kind: "invalid_address" }
   | { kind: "out_of_stock"; variantId: string };
+
+export interface PlaceOrderDeps {
+  createPaymentIntent(
+    request: PaymentIntentRequest,
+  ): Promise<CreatedPaymentIntent>;
+}
+
+// Production calls Stripe. Tests inject a creator so no suite reaches the
+// network, while the transaction boundary stays the one under test.
+const defaultDeps: PlaceOrderDeps = {
+  createPaymentIntent: (request) => createStripePaymentIntent(request),
+};
 
 export interface CheckoutBody {
   addressId: string;
@@ -149,11 +166,10 @@ function hasPrismaCode(error: unknown, code: string): boolean {
   return candidate.code === code;
 }
 
-export async function placeOrder({
-  userId,
-  addressId,
-  cartVersion: submittedVersion,
-}: CheckoutBody & { userId: string }): Promise<PlaceOrderResult> {
+export async function placeOrder(
+  { userId, addressId, cartVersion: submittedVersion }: CheckoutBody & { userId: string },
+  deps: PlaceOrderDeps = defaultDeps,
+): Promise<PlaceOrderResult> {
   const cart = await db.cart.findUnique({
     where: { userId },
     select: { id: true },
@@ -255,11 +271,24 @@ export async function placeOrder({
       const expiresAt = clock.expiresAt;
 
       const orderId = randomUUID();
+      const number = orderNumber(orderId);
+
+      // The amount is the one computed above from Variant.priceCents, and the
+      // key is the checkout key: a retry resolves to the same intent. The call
+      // sits inside the transaction so a Stripe failure rolls the stock back
+      // and leaves no order without an intent.
+      const intent = await deps.createPaymentIntent({
+        amountCents: totals.totalCents,
+        currency: "eur",
+        orderId,
+        orderNumber: number,
+        idempotencyKey,
+      });
 
       const order = await tx.order.create({
         data: {
           id: orderId,
-          number: orderNumber(orderId),
+          number,
           userId,
           status: "PENDING",
           subtotalCents: totals.subtotalCents,
@@ -276,7 +305,7 @@ export async function placeOrder({
             country: address.country,
           },
           deliveryMethod: record.deliveryMethod,
-          paymentIntentId: `pi_demo_${randomBytes(12).toString("hex")}`,
+          paymentIntentId: intent.id,
           items: {
             create: record.items.map((item) => ({
               variantId: item.variantId,
@@ -299,7 +328,7 @@ export async function placeOrder({
 
       await tx.cartItem.deleteMany({ where: { cartId: record.id } });
 
-      return { kind: "created", order };
+      return { kind: "created", order, clientSecret: intent.clientSecret };
     });
   } catch (error: unknown) {
     if (error instanceof OutOfStockError) {

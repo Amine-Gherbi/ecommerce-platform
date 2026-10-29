@@ -31,8 +31,9 @@ export default tseslint.config(
     },
   },
   {
-    // Node scripts and the k6 scenario run outside the app's environment.
-    files: ["scripts/**/*.mjs", "load/**/*.js"],
+    // Node scripts, the k6 scenario and the Playwright Stripe mock run outside
+    // the app's environment.
+    files: ["scripts/**/*.mjs", "load/**/*.js", "tests/e2e/**/*.mjs"],
     languageOptions: {
       globals: {
         process: "readonly",
