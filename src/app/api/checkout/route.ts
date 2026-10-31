@@ -61,8 +61,24 @@ export async function POST(request: Request): Promise<Response> {
       });
 
     case "duplicate":
-      // A replay is a success: the same body, so a client that lost the first
-      // response can follow the existing order instead of retrying blindly.
+      // A replay of the attempt that produced this order is a success: the
+      // same body, so a client that lost the first response can follow the
+      // existing order instead of retrying blindly. A cancelled order is the
+      // one exception — it is not the result of this attempt and cannot be
+      // paid, so say so instead of redirecting the shopper into a dead order.
+      // The attempt resolver normally steps past a cancelled order and creates
+      // a new one; this guards the residual race where it is cancelled after
+      // the resolver ran.
+      if (result.order.status === "CANCELLED") {
+        return Response.json(
+          {
+            error: "ORDER_CANCELLED",
+            message:
+              "That order was cancelled before payment. Place the order again to start a new attempt.",
+          },
+          { status: 409 },
+        );
+      }
       return Response.json(payload(result.order), { status: 200 });
 
     case "cart_changed":

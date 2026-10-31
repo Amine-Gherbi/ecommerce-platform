@@ -54,20 +54,41 @@ Consequences:
 
 ### 2. The unique index decides the double submit
 
+The first attempt for a cart version uses
+
 ```
-idempotencyKey = sha256(cart.id + ':' + cartVersion)
+baseKey = sha256(cart.id + ':' + cartVersion)
+idempotencyKey = baseKey
 ```
 
-(`src/lib/checkout.ts:150-152`.) `Order.@@unique([userId, idempotencyKey])` is
-the arbiter. Both concurrent requests attempt the insert; Postgres blocks the
-second on the index until the first commits, then raises `23505` (Prisma
-`P2002`). The loser does **not** return 409: it re-reads the winner's order and
-answers 200 with the same body (`src/lib/checkout.ts:341-348`;
-`src/app/api/checkout/route.ts:63-66`). A duplicate checkout is a replay, not a
-conflict.
+(`src/lib/checkout.ts:155-157`.) A later attempt appends its ordinal:
 
-There is also a pre-check inside the transaction (`:186-192`), but it is an
-optimisation for the sequential case. The unique index is what holds under
+```
+idempotencyKey = baseKey + ':' + attempt   // attempt >= 1
+```
+
+(`src/lib/checkout.ts:159-161`.) The attempt resolver
+(`src/lib/checkout.ts:173-209`) reads every order whose key starts with
+`baseKey` and chooses the next ordinal. **Only `CANCELLED` frees the key**: it
+is terminal and unpaid, so there is nothing to charge and nothing to resume. A
+new submission of an unchanged cart after cancellation creates a new order
+with a new key and a new PaymentIntent. `PENDING` (a live attempt), `PAID`,
+`FULFILLED`, `REFUND_REQUIRED` and `REFUNDED` all answer a replay with the
+existing order and keep blocking a second charge.
+
+`Order.@@unique([userId, idempotencyKey])` is the arbiter. Both concurrent
+requests attempt the insert; Postgres blocks the second on the index until the
+first commits, then raises `23505` (Prisma `P2002`). The loser does **not**
+return 409: it re-reads the winner's order and answers 200 with the same body
+(`src/lib/checkout.ts:402-410`; `src/app/api/checkout/route.ts:63-83`). A
+duplicate checkout is a replay, not a conflict. The one exception is a
+`CANCELLED` order recovered through the `P2002` race: the route answers 409
+`ORDER_CANCELLED` and tells the shopper to place the order again, rather than
+rendering an order that cannot be paid (`route.ts:69-82`). The resolver makes
+that a residual race guard, not the normal path.
+
+The resolver runs inside the transaction (`src/lib/checkout.ts:243-251`), so it
+is the pre-check for the sequential case; the unique index is what holds under
 concurrency.
 
 ### 3. Stock is decremented inside the same transaction, in id order
@@ -221,6 +242,10 @@ order history. A missing, malformed or foreign address returns
 - Idempotency is per `(user, cart contents)`. Adding an item after a successful
   checkout creates a new key and therefore a new order, which is the intended
   "one order per checkout attempt".
+- An order cancelled by the sweeper (or by an admin) releases its key. Placing
+  the same unchanged cart again is a new attempt with a new order number and a
+  new PaymentIntent; the dead order is never returned as the result. A paid or
+  refund-pending attempt for the same cart contents still answers with itself.
 - A late payment against a cancelled order is refused as an illegal transition
   and the money is not applied. A real deployment would need a refund path
   outside this code; there is none.
