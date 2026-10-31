@@ -29,14 +29,11 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <div className="flex min-h-dvh flex-col">
-          <a
-            href="#content"
-            className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-4 focus:z-50 focus:border focus:border-ink focus:bg-ink focus:px-4 focus:py-3 focus:text-[11px] focus:uppercase focus:tracking-[0.14em] focus:text-surface"
-          >
+          <a href="#main" className="skip-link">
             Skip to content
           </a>
           <SiteHeader />
-          <main id="content" className="flex-1">
+          <main id="main" tabIndex={-1} className="flex-1">
             {children}
           </main>
           <SiteFooter />
