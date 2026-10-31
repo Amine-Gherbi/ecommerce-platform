@@ -40,6 +40,7 @@ export default tseslint.config(
         console: "readonly",
         URL: "readonly",
         URLSearchParams: "readonly",
+        TextEncoder: "readonly",
         __ENV: "readonly",
         __VU: "readonly",
         __ITER: "readonly",

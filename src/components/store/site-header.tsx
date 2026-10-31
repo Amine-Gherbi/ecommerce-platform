@@ -84,7 +84,6 @@ export async function SiteHeader() {
             <Link
               href="/"
               className={`flex min-h-11 shrink-0 items-baseline gap-2 ${focusRing}`}
-              aria-label="Kestrel Audio home"
             >
               <span className="text-[22px] font-bold lowercase leading-none tracking-[-0.03em] text-ink">
                 kestrel

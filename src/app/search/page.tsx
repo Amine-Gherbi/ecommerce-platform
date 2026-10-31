@@ -7,6 +7,7 @@ import { SortSelect } from "@/components/store/sort-select";
 import { Breadcrumbs, Container } from "@/components/store/ui";
 import { getSearchPageData } from "@/lib/catalog";
 import type { CatalogSearchParams } from "@/lib/catalog-shared";
+import { searchDescription } from "@/lib/seo";
 import {
   pageTitleClass,
   primaryButtonClass,
@@ -30,6 +31,7 @@ export async function generateMetadata({
   const query = firstValue((await searchParams).q).trim();
   return {
     title: query.length > 0 ? `Search: ${query}` : "Search",
+    description: searchDescription(query),
   };
 }
 
